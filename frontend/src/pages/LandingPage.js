@@ -9,7 +9,7 @@ import {
 import {
   ArrowRight, Asterisk, ShieldCheck, Coins, RefreshCcw, FileText, Gift, Clock3, CheckCircle2,
 } from "lucide-react";
-import { API } from "@/api";
+import { API, trackEvent } from "@/api";
 import DynamicForm from "@/components/DynamicForm";
 
 const HERO_BG = "https://images.unsplash.com/photo-1531297484001-80022131f5a1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwyfHxsYXB0b3AlMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3OTE1NTAwMDZ8MA&ixlib=rb-4.1.0&q=85";
@@ -50,6 +50,11 @@ export default function LandingPage() {
   const [legalDialog, setLegalDialog] = useState("");
   const formRef = useRef(null);
   const tracking = useTrackingParams();
+
+  useEffect(() => {
+    trackEvent("page_view", { meta: tracking });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   useEffect(() => {
     Promise.all([API.get("/content"), API.get("/form/published")])

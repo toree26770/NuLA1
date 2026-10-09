@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  Asterisk, LayoutDashboard, UserPlus, Users, Download, CheckCircle2, Copy,
+  Asterisk, LayoutDashboard, BarChart3, UserPlus, Users, Download, CheckCircle2, Copy,
   FileEdit, Palette, History, Megaphone, Settings, LogOut, Menu,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -9,6 +9,7 @@ import { API } from "@/api";
 
 const MENU = [
   { to: "/admin", label: "Tableau de bord", icon: LayoutDashboard, end: true, testid: "nav-dashboard" },
+  { to: "/admin/statistiques", label: "Statistiques", icon: BarChart3, testid: "nav-statistiques" },
   { to: "/admin/leads/nouveaux", label: "Nouveaux leads", icon: UserPlus, testid: "nav-nouveaux" },
   { to: "/admin/leads", label: "Tous les leads", icon: Users, testid: "nav-tous", end: true },
   { to: "/admin/leads/recuperes", label: "Leads récupérés", icon: Download, testid: "nav-recuperes" },

@@ -37,6 +37,46 @@ async def get_published_form():
     return {"version": version, "steps": steps, "questions": questions}
 
 
+# ---------- Suivi d'audience (analytics) ----------
+
+VALID_EVENTS = {"page_view", "form_start", "step_view", "form_submit"}
+
+
+class TrackEvent(BaseModel):
+    session_id: str
+    event: str
+    step_index: int | None = None
+    meta: dict = {}
+
+
+@router.post("/track")
+async def track_event(body: TrackEvent, request: Request):
+    """Enregistre un évènement d'audience (public, sans authentification)."""
+    if body.event not in VALID_EVENTS:
+        return {"ok": True}
+    sid = clean_text(body.session_id, 80)
+    if not sid:
+        return {"ok": True}
+    now = datetime.now(timezone.utc)
+    meta = body.meta or {}
+    doc = {
+        "id": new_id(),
+        "session_id": sid,
+        "type": body.event,
+        "step_index": body.step_index if isinstance(body.step_index, int) else None,
+        "created_at": now.isoformat(),
+        "day": now.strftime("%Y-%m-%d"),
+        "ip": request.client.host if request.client else "unknown",
+        "utm_source": clean_text(meta.get("utm_source"), 120) or "",
+        "utm_medium": clean_text(meta.get("utm_medium"), 120) or "",
+        "utm_campaign": clean_text(meta.get("utm_campaign"), 120) or "",
+        "fbclid": clean_text(meta.get("fbclid"), 200) or "",
+        "user_agent": clean_text(request.headers.get("user-agent") or "", 300),
+    }
+    await db.analytics_events.insert_one(doc)
+    return {"ok": True}
+
+
 class LeadSubmit(BaseModel):
     form_version_id: str
     answers: dict

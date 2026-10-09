@@ -56,6 +56,83 @@ async def get_stats():
     }
 
 
+@router.get("/analytics")
+async def get_analytics(days: int = Query(30, ge=1, le=365)):
+    """Statistiques d'audience : visites, formulaires commencés, envoyés, abandons, entonnoir."""
+    now = datetime.now(timezone.utc)
+    start = (now - timedelta(days=days)).isoformat()
+    ev = db.analytics_events
+    base = {"created_at": {"$gte": start}}
+
+    async def distinct_sessions(match):
+        res = await ev.aggregate([
+            {"$match": match},
+            {"$group": {"_id": "$session_id"}},
+            {"$count": "n"},
+        ]).to_list(1)
+        return res[0]["n"] if res else 0
+
+    visits = await ev.count_documents({**base, "type": "page_view"})
+    unique_visitors = await distinct_sessions({**base, "type": "page_view"})
+    form_starts = await distinct_sessions({**base, "type": "form_start"})
+    submissions = await distinct_sessions({**base, "type": "form_submit"})
+    leads_count = await db.leads.count_documents({"created_at": {"$gte": start}, "status": {"$ne": "doublon"}})
+
+    abandons = max(form_starts - submissions, 0)
+    conversion_rate = round(submissions / unique_visitors * 100, 1) if unique_visitors else 0.0
+    completion_rate = round(submissions / form_starts * 100, 1) if form_starts else 0.0
+    abandon_rate = round(abandons / form_starts * 100, 1) if form_starts else 0.0
+
+    step_rows = await ev.aggregate([
+        {"$match": {**base, "type": "step_view", "step_index": {"$ne": None}}},
+        {"$group": {"_id": {"step": "$step_index", "s": "$session_id"}}},
+        {"$group": {"_id": "$_id.step", "sessions": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]).to_list(50)
+    steps_reached = [{"step_index": r["_id"], "sessions": r["sessions"]} for r in step_rows]
+
+    async def day_series(type_):
+        return await ev.aggregate([
+            {"$match": {**base, "type": type_}},
+            {"$group": {"_id": "$day", "count": {"$sum": 1}}},
+            {"$sort": {"_id": 1}},
+        ]).to_list(400)
+
+    visits_day = await day_series("page_view")
+    submit_day = await day_series("form_submit")
+    days_map = {}
+    for d in visits_day:
+        days_map.setdefault(d["_id"], {"date": d["_id"], "visites": 0, "envois": 0})["visites"] = d["count"]
+    for d in submit_day:
+        days_map.setdefault(d["_id"], {"date": d["_id"], "visites": 0, "envois": 0})["envois"] = d["count"]
+    per_day = [days_map[k] for k in sorted(days_map.keys())]
+
+    src_rows = await ev.aggregate([
+        {"$match": {**base, "type": "page_view"}},
+        {"$group": {"_id": {"src": {"$ifNull": ["$utm_source", ""]}, "s": "$session_id"}}},
+        {"$group": {"_id": "$_id.src", "sessions": {"$sum": 1}}},
+        {"$sort": {"sessions": -1}},
+        {"$limit": 8},
+    ]).to_list(8)
+    by_source = [{"source": (r["_id"] or "(direct / inconnu)"), "sessions": r["sessions"]} for r in src_rows]
+
+    return {
+        "days": days,
+        "visits": visits,
+        "unique_visitors": unique_visitors,
+        "form_starts": form_starts,
+        "submissions": submissions,
+        "leads_count": leads_count,
+        "abandons": abandons,
+        "conversion_rate": conversion_rate,
+        "completion_rate": completion_rate,
+        "abandon_rate": abandon_rate,
+        "steps_reached": steps_reached,
+        "per_day": per_day,
+        "by_source": by_source,
+    }
+
+
 # ---------- Leads ----------
 
 @router.get("/leads")

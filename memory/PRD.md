@@ -32,5 +32,11 @@ Soumission complète mobile (3 étapes, champ personnalisé), doublon bloqué, t
 - P1 : OTP SMS (Twilio) et vérification e-mail par code (Resend) si souhaités ; purge RGPD automatique selon retention_days.
 - P2 : rôles admin multiples, notifications e-mail de nouveau lead, A/B testing de titres.
 
+## Journal (mises à jour)
+- 2026-10-09 : Retrait de la question de consentement du formulaire (affichage + validation backend).
+- 2026-10-09 : FormBuilder — clarification UX pour un novice (bandeau + bouton « Modifier ce formulaire » qui crée un brouillon éditable).
+- 2026-10-09 : Déploiement VPS simplifié — script tout-en-un `deploy/install.sh` + notice `deploy/README.md` (et `README.md` racine). Filtre auto des libs internes non utilisées (emergentintegrations, litellm). HTTPS via Cloudflare (sous-domaine).
+- 2026-10-09 : **Système d'analyse d'audience** (NOUVEAU). Collecte d'évènements publics `POST /api/track` (page_view, form_start, step_view, form_submit) dans `analytics_events` ; agrégation `GET /api/admin/analytics?days=` (visites, visiteurs uniques, formulaires commencés/envoyés, abandons, taux conversion/complétion/abandon, entonnoir par étape, série temporelle, sources de trafic). Page admin `Statistiques` (`/admin/statistiques`) avec cartes, entonnoir, graphique visites/envois et sources. Suivi session via `localStorage` (helper `trackEvent` dans `api.js`).
+
 ## Identifiants
 Voir /app/memory/test_credentials.md (admin@claude-offre.fr).

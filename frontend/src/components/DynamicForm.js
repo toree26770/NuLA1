@@ -1,7 +1,7 @@
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2 } from "lucide-react";
-import { API, fmtError } from "@/api";
+import { API, fmtError, trackEvent } from "@/api";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^(?:(?:\+|00)33[\s.-]?|0)[1-9](?:[\s.-]?\d{2}){4}$/;
@@ -204,13 +204,24 @@ export default function DynamicForm({ form, texts, tracking, preview = false, co
   const [globalError, setGlobalError] = useState("");
   const honeypotRef = useRef(null);
   const startedAtRef = useRef(new Date().toISOString());
+  const startedRef = useRef(false);
 
   const t = texts || {};
   const total = steps.length || 1;
   const currentQuestions = stepQuestions[stepIndex] || [];
   const isLast = stepIndex === total - 1;
 
+  useEffect(() => {
+    if (preview) return;
+    trackEvent("step_view", { step_index: stepIndex });
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [stepIndex]);
+
   const setValue = (key, v) => {
+    if (!preview && !startedRef.current) {
+      startedRef.current = true;
+      trackEvent("form_start", { step_index: stepIndex });
+    }
     setAnswers((prev) => ({ ...prev, [key]: v }));
     setErrors((prev) => ({ ...prev, [key]: undefined }));
   };
@@ -242,6 +253,7 @@ export default function DynamicForm({ form, texts, tracking, preview = false, co
         answers,
         meta: { ...tracking, started_at: startedAtRef.current, website: honeypotRef.current?.value || "" },
       });
+      trackEvent("form_submit", { step_index: stepIndex });
       setDone(true);
     } catch (e) {
       const detail = e?.response?.data?.detail;

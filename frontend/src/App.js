@@ -5,6 +5,7 @@ import LandingPage from "@/pages/LandingPage";
 import AdminLogin from "@/pages/admin/Login";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
+import AnalyticsPage from "@/pages/admin/AnalyticsPage";
 import LeadsPage from "@/pages/admin/LeadsPage";
 import FormBuilder from "@/pages/admin/FormBuilder";
 import ContentEditor from "@/pages/admin/ContentEditor";
@@ -21,6 +22,7 @@ function App() {
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />
+            <Route path="statistiques" element={<AnalyticsPage />} />
             <Route path="leads" element={<LeadsPage key="all" status="" title="Tous les leads" />} />
             <Route path="leads/nouveaux" element={<LeadsPage key="nouveau" status="nouveau" title="Nouveaux leads" />} />
             <Route path="leads/recuperes" element={<LeadsPage key="recupere" status="recupere" title="Leads récupérés" />} />

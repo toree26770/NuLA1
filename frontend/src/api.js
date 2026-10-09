@@ -5,6 +5,30 @@ export const API = axios.create({
   withCredentials: true,
 });
 
+export function getSessionId() {
+  try {
+    let sid = localStorage.getItem("claude_sid");
+    if (!sid) {
+      sid =
+        typeof crypto !== "undefined" && crypto.randomUUID
+          ? crypto.randomUUID()
+          : String(Date.now()) + Math.random().toString(36).slice(2);
+      localStorage.setItem("claude_sid", sid);
+    }
+    return sid;
+  } catch {
+    return "anon";
+  }
+}
+
+export function trackEvent(event, { step_index = null, meta = {} } = {}) {
+  try {
+    API.post("/track", { session_id: getSessionId(), event, step_index, meta }).catch(() => {});
+  } catch {
+    /* ne jamais bloquer l'UI pour du suivi */
+  }
+}
+
 export function fmtError(e) {
   const d = e?.response?.data?.detail;
   if (!d) return e?.message || "Erreur réseau. Réessayez.";
