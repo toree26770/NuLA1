@@ -223,8 +223,8 @@ export default function FormBuilder() {
         </div>
         <div className="flex flex-wrap gap-2">
           {!isDraft && (
-            <button type="button" data-testid="new-draft-btn" onClick={() => createDraft(current.version.id)} className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 inline-flex items-center gap-2">
-              <FilePlus2 className="h-4 w-4" /> Nouveau brouillon (copie)
+            <button type="button" data-testid="new-draft-btn" onClick={() => createDraft(current.version.id)} className="btn-primary-orange !py-2.5 !px-5 !text-sm">
+              <Pencil className="h-4 w-4" /> Modifier ce formulaire
             </button>
           )}
           <button type="button" data-testid="preview-desktop-btn" onClick={() => setPreview(preview === "desktop" ? null : "desktop")} className={`rounded-xl border px-4 py-2.5 text-sm font-semibold inline-flex items-center gap-2 transition-colors ${preview === "desktop" ? "border-[#FF683D] text-[#FF683D] bg-[#FF683D]/5" : "border-gray-300 text-gray-600 hover:bg-gray-50"}`}>
@@ -279,9 +279,17 @@ export default function FormBuilder() {
       ) : (
         <div className="space-y-5">
           {!isDraft && (
-            <p className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-700" data-testid="readonly-notice">
-              Cette version est {current.version.status === "published" ? "publiée" : "archivée"} : créez un brouillon pour la modifier.
-            </p>
+            <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-4" data-testid="readonly-notice">
+              <p className="text-sm text-amber-800 font-medium mb-1">
+                Ce formulaire est actuellement {current.version.status === "published" ? "en ligne (publié)" : "archivé"} et verrouillé.
+              </p>
+              <p className="text-sm text-amber-700 mb-3">
+                Pour ajouter, retirer ou réorganiser des étapes et des questions, créez une copie modifiable. Vos visiteurs continueront de voir la version actuelle jusqu'à ce que vous publiiez vos modifications.
+              </p>
+              <button type="button" data-testid="readonly-edit-btn" onClick={() => createDraft(current.version.id)} className="btn-primary-orange !py-2.5 !px-5 !text-sm">
+                <Pencil className="h-4 w-4" /> Modifier ce formulaire
+              </button>
+            </div>
           )}
           {editSteps.map((step, stepIdx) => {
             const qs = editQuestions.filter((q) => q.step_id === step.id);
