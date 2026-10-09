@@ -6,6 +6,7 @@ import AdminLogin from "@/pages/admin/Login";
 import AdminLayout from "@/pages/admin/AdminLayout";
 import Dashboard from "@/pages/admin/Dashboard";
 import AnalyticsPage from "@/pages/admin/AnalyticsPage";
+import PartialLeadsPage from "@/pages/admin/PartialLeadsPage";
 import LeadsPage from "@/pages/admin/LeadsPage";
 import FormBuilder from "@/pages/admin/FormBuilder";
 import ContentEditor from "@/pages/admin/ContentEditor";
@@ -28,6 +29,7 @@ function App() {
             <Route path="leads/recuperes" element={<LeadsPage key="recupere" status="recupere" title="Leads récupérés" />} />
             <Route path="leads/traites" element={<LeadsPage key="traite" status="traite" title="Leads traités" />} />
             <Route path="leads/doublons" element={<LeadsPage key="doublon" status="doublon" title="Doublons" />} />
+            <Route path="leads/incomplets" element={<PartialLeadsPage />} />
             <Route path="formulaire" element={<FormBuilder />} />
             <Route path="contenu" element={<ContentEditor />} />
             <Route path="exports" element={<ExportsPage />} />

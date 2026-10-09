@@ -30,19 +30,36 @@ export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(false);
 
-  useEffect(() => {
+  const load = () => {
     setLoading(true);
+    setError(false);
     API.get(`/admin/analytics?days=${days}`)
       .then((r) => setData(r.data))
-      .catch(() => {})
+      .catch(() => setError(true))
       .finally(() => setLoading(false));
+  };
+
+  useEffect(() => {
+    load();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [days]);
 
   if (loading && !data) {
     return <div className="h-64 animate-pulse rounded-2xl bg-gray-100" data-testid="analytics-loading" />;
   }
-  if (!data) return null;
+  if (error || !data) {
+    return (
+      <div className="rounded-2xl border border-gray-200 bg-white p-10 text-center" data-testid="analytics-error">
+        <p className="text-gray-700 font-medium">Impossible de charger les statistiques pour le moment.</p>
+        <p className="text-sm text-gray-400 mt-1">Vérifiez votre connexion puis réessayez.</p>
+        <button type="button" onClick={load} className="btn-primary-orange !py-2.5 !px-5 !text-sm mt-4" data-testid="analytics-retry">
+          Réessayer
+        </button>
+      </div>
+    );
+  }
 
   const steps = (data.steps_reached || []).filter((s) => s.step_index >= 1);
   const funnel = [

@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { NavLink, Outlet, useNavigate } from "react-router-dom";
 import {
-  Asterisk, LayoutDashboard, BarChart3, UserPlus, Users, Download, CheckCircle2, Copy,
+  Asterisk, LayoutDashboard, BarChart3, UserPlus, Users, UserX, Download, CheckCircle2, Copy,
   FileEdit, Palette, History, Megaphone, Settings, LogOut, Menu,
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
@@ -15,6 +15,7 @@ const MENU = [
   { to: "/admin/leads/recuperes", label: "Leads récupérés", icon: Download, testid: "nav-recuperes" },
   { to: "/admin/leads/traites", label: "Leads traités", icon: CheckCircle2, testid: "nav-traites" },
   { to: "/admin/leads/doublons", label: "Doublons", icon: Copy, testid: "nav-doublons" },
+  { to: "/admin/leads/incomplets", label: "Leads incomplets", icon: UserX, testid: "nav-incomplets" },
   { to: "/admin/formulaire", label: "Gestion du formulaire", icon: FileEdit, testid: "nav-formulaire" },
   { to: "/admin/contenu", label: "Éditeur de landing page", icon: Palette, testid: "nav-contenu" },
   { to: "/admin/exports", label: "Historique des exports", icon: History, testid: "nav-exports" },

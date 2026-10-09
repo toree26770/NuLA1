@@ -50,6 +50,18 @@ export async function downloadBatch(batchId, filename) {
   window.URL.revokeObjectURL(url);
 }
 
+export async function downloadCsv(path, filename) {
+  const res = await API.get(path, { responseType: "blob" });
+  const url = window.URL.createObjectURL(new Blob([res.data], { type: "text/csv;charset=utf-8" }));
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || "export.csv";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+  window.URL.revokeObjectURL(url);
+}
+
 export const STATUS_LABELS = {
   nouveau: "Nouveau",
   recupere: "Récupéré",

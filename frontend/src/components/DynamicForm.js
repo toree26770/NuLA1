@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { motion, AnimatePresence } from "framer-motion";
 import { ArrowLeft, ArrowRight, Check, CheckCircle2 } from "lucide-react";
-import { API, fmtError, trackEvent } from "@/api";
+import { API, fmtError, trackEvent, getSessionId } from "@/api";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
 const PHONE_RE = /^(?:(?:\+|00)33[\s.-]?|0)[1-9](?:[\s.-]?\d{2}){4}$/;
@@ -217,6 +217,21 @@ export default function DynamicForm({ form, texts, tracking, preview = false, co
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [stepIndex]);
 
+  // Sauvegarde automatique des réponses partielles (capture d'abandon)
+  useEffect(() => {
+    if (preview || !startedRef.current) return;
+    const timer = setTimeout(() => {
+      API.post("/leads/partial", {
+        session_id: getSessionId(),
+        answers,
+        step_index: stepIndex,
+        meta: { ...tracking, website: honeypotRef.current?.value || "" },
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [answers, stepIndex]);
+
   const setValue = (key, v) => {
     if (!preview && !startedRef.current) {
       startedRef.current = true;
@@ -251,7 +266,7 @@ export default function DynamicForm({ form, texts, tracking, preview = false, co
       await API.post("/leads", {
         form_version_id: form.version.id,
         answers,
-        meta: { ...tracking, started_at: startedAtRef.current, website: honeypotRef.current?.value || "" },
+        meta: { ...tracking, started_at: startedAtRef.current, session_id: getSessionId(), website: honeypotRef.current?.value || "" },
       });
       trackEvent("form_submit", { step_index: stepIndex });
       setDone(true);

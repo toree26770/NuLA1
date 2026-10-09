@@ -77,6 +77,66 @@ async def track_event(body: TrackEvent, request: Request):
     return {"ok": True}
 
 
+class PartialLeadBody(BaseModel):
+    session_id: str
+    answers: dict = {}
+    step_index: int | None = None
+    meta: dict = {}
+
+
+@router.post("/leads/partial")
+async def save_partial_lead(body: PartialLeadBody, request: Request):
+    """Enregistre les réponses partielles d'un prospect (capture d'abandon)."""
+    sid = clean_text(body.session_id, 80)
+    if not sid:
+        return {"ok": True}
+    meta = body.meta or {}
+    if clean_text(meta.get("website")):  # honeypot : bot, on ignore
+        return {"ok": True}
+
+    raw = body.answers or {}
+    clean_answers = {}
+    for k, v in raw.items():
+        k2 = clean_text(k, 80)
+        if not k2 or k2 == "website":
+            continue
+        if isinstance(v, bool):
+            clean_answers[k2] = v
+        elif isinstance(v, list):
+            clean_answers[k2] = [clean_text(str(x), 200) for x in v][:20]
+        else:
+            s = clean_text(str(v), 300)
+            if s != "":
+                clean_answers[k2] = s
+    if not clean_answers:
+        return {"ok": True}
+
+    now = now_iso()
+    await db.partial_leads.update_one(
+        {"session_id": sid},
+        {
+            "$set": {
+                "answers": clean_answers,
+                "step_index": body.step_index if isinstance(body.step_index, int) else None,
+                "updated_at": now,
+                "utm_source": clean_text(meta.get("utm_source"), 200),
+                "utm_medium": clean_text(meta.get("utm_medium"), 200),
+                "utm_campaign": clean_text(meta.get("utm_campaign"), 200),
+                "fbclid": clean_text(meta.get("fbclid"), 300),
+            },
+            "$setOnInsert": {
+                "id": new_id(),
+                "session_id": sid,
+                "created_at": now,
+                "completed": False,
+                "ip": request.client.host if request.client else "unknown",
+            },
+        },
+        upsert=True,
+    )
+    return {"ok": True}
+
+
 class LeadSubmit(BaseModel):
     form_version_id: str
     answers: dict
@@ -273,5 +333,13 @@ async def submit_lead(body: LeadSubmit, request: Request):
             })
     if answer_docs:
         await db.lead_answers.insert_many(answer_docs)
+
+    # Marque la capture partielle comme complétée (retirée des leads incomplets)
+    sid = clean_text(meta.get("session_id"), 80)
+    if sid:
+        await db.partial_leads.update_one(
+            {"session_id": sid},
+            {"$set": {"completed": True, "completed_lead_id": lead_id, "updated_at": now_iso()}},
+        )
 
     return {"ok": True, "lead_id": lead_id, "duplicate": bool(duplicate_of)}

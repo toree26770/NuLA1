@@ -33,6 +33,8 @@ Soumission complète mobile (3 étapes, champ personnalisé), doublon bloqué, t
 - P2 : rôles admin multiples, notifications e-mail de nouveau lead, A/B testing de titres.
 
 ## Journal (mises à jour)
+- 2026-10-09 : Statistiques — page rendue robuste (états chargement / erreur + bouton « Réessayer » au lieu d'une page blanche si le chargement échoue).
+- 2026-10-09 : **Leads incomplets** (NOUVEAU). Capture automatique des réponses partielles pendant la saisie (`POST /api/leads/partial`, collection `partial_leads`, upsert par `session_id`, debounce 1,5 s côté formulaire). Marquage auto `completed` à l'envoi complet (via `session_id` dans le meta). Admin : page `/admin/leads/incomplets` (liste + pagination) et export CSV français `GET /api/admin/partial-leads/export.csv` (`build_partial_leads_csv`).
 - 2026-10-09 : Retrait de la question de consentement du formulaire (affichage + validation backend).
 - 2026-10-09 : FormBuilder — clarification UX pour un novice (bandeau + bouton « Modifier ce formulaire » qui crée un brouillon éditable).
 - 2026-10-09 : Déploiement VPS simplifié — script tout-en-un `deploy/install.sh` + notice `deploy/README.md` (et `README.md` racine). Filtre auto des libs internes non utilisées (emergentintegrations, litellm). HTTPS via Cloudflare (sous-domaine).

@@ -4,7 +4,7 @@ from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
 
 from auth import get_current_admin
-from csv_utils import FIXED_KEYS, build_leads_csv
+from csv_utils import FIXED_KEYS, build_leads_csv, build_partial_leads_csv
 from database import db, get_settings, new_id, now_iso
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
@@ -168,6 +168,27 @@ async def list_leads(
     total = await db.leads.count_documents(query)
     leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
     return {"leads": leads, "total": total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
+
+
+@router.get("/partial-leads")
+async def list_partial_leads(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=200)):
+    """Leads incomplets : prospects ayant commencé mais pas envoyé le formulaire."""
+    query = {"completed": {"$ne": True}}
+    total = await db.partial_leads.count_documents(query)
+    items = await db.partial_leads.find(query, {"_id": 0}).sort("updated_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
+    return {"items": items, "total": total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
+
+
+@router.get("/partial-leads/export.csv")
+async def export_partial_leads():
+    query = {"completed": {"$ne": True}}
+    items = await db.partial_leads.find(query, {"_id": 0}).sort("updated_at", -1).to_list(100000)
+    csv_bytes = build_partial_leads_csv(items)
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": 'attachment; filename="leads_incomplets.csv"'},
+    )
 
 
 @router.get("/leads/{lead_id}")

@@ -88,3 +88,54 @@ def build_leads_csv(leads, answers_by_lead, extra_labels):
             row.append(csv_safe(answers.get(label, "")))
         writer.writerow(row)
     return output.getvalue().encode("utf-8-sig")
+
+
+PARTIAL_KNOWN = [
+    ("first_name", "Prénom"),
+    ("last_name", "Nom"),
+    ("birth_date", "Date de naissance"),
+    ("phone", "Téléphone"),
+    ("email", "E-mail"),
+    ("amount", "Montant envisagé"),
+]
+
+
+def build_partial_leads_csv(items):
+    """CSV des leads incomplets (prospects n'ayant pas tout rempli)."""
+    known = {k for k, _ in PARTIAL_KNOWN}
+    extra_keys = []
+    for it in items:
+        for k in (it.get("answers") or {}):
+            if k not in known and k not in extra_keys:
+                extra_keys.append(k)
+
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";", quoting=csv.QUOTE_ALL, lineterminator="\r\n")
+    header = (
+        ["ID", "Première visite", "Heure", "Dernière activité", "Étape atteinte"]
+        + [lbl for _, lbl in PARTIAL_KNOWN]
+        + extra_keys
+        + ["Source", "Campagne"]
+    )
+    writer.writerow(header)
+    for it in items:
+        a = it.get("answers") or {}
+        step = it.get("step_index")
+        row = [
+            csv_safe(it.get("id")),
+            fmt_date_fr(it.get("created_at")),
+            fmt_time_fr(it.get("created_at")),
+            (fmt_date_fr(it.get("updated_at")) + " " + fmt_time_fr(it.get("updated_at"))).strip(),
+            ("Étape " + str(step + 1)) if isinstance(step, int) else "",
+        ]
+        for k, _ in PARTIAL_KNOWN:
+            v = a.get(k, "")
+            if k == "birth_date" and v:
+                v = fmt_date_fr(v)
+            row.append(csv_safe(v))
+        for k in extra_keys:
+            row.append(csv_safe(a.get(k, "")))
+        row.append(csv_safe(it.get("utm_source")))
+        row.append(csv_safe(it.get("utm_campaign")))
+        writer.writerow(row)
+    return output.getvalue().encode("utf-8-sig")
