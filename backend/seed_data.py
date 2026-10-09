@@ -130,7 +130,6 @@ DEFAULT_QUESTIONS = [
     {"key": "email", "label": "Adresse e-mail", "field_type": "email", "required": True, "placeholder": "vous@exemple.fr", "step_index": 0, "position": 3},
     {"key": "phone", "label": "Numéro de téléphone", "field_type": "phone", "required": True, "placeholder": "06 12 34 56 78", "step_index": 0, "position": 4},
     {"key": "amount", "label": "Quel montant envisagez-vous d'investir ?", "description": "Cette information nous aide à mieux comprendre votre projet. Elle ne constitue aucun engagement.", "field_type": "cards", "required": True, "options": AMOUNT_OPTIONS, "step_index": 1, "position": 0},
-    {"key": "consent", "label": "Consentement", "field_type": "checkbox", "required": True, "step_index": 1, "position": 1},
 ]
 
 
