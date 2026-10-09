@@ -117,7 +117,11 @@ say "Configuration du backend (Python / FastAPI)…"
 cd "$APP_DIR/backend"
 python3 -m venv venv
 ./venv/bin/pip install --upgrade pip -q
-./venv/bin/pip install -q -r requirements.txt
+# Certaines librairies internes à Emergent ne s'installent pas sur un VPS externe
+# et ne sont pas utilisées par l'application : on les retire de la liste.
+grep -viE '^(emergentintegrations|litellm)([=<> @]|$)' requirements.txt \
+  | grep -v 'customer-assets.emergentagent.com' > /tmp/requirements.vps.txt
+./venv/bin/pip install -q -r /tmp/requirements.vps.txt
 
 cat > "$APP_DIR/backend/.env" <<EOF
 MONGO_URL=mongodb://localhost:27017
