@@ -1,0 +1,42 @@
+import "@/App.css";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import { Toaster } from "@/components/ui/sonner";
+import LandingPage from "@/pages/LandingPage";
+import AdminLogin from "@/pages/admin/Login";
+import AdminLayout from "@/pages/admin/AdminLayout";
+import Dashboard from "@/pages/admin/Dashboard";
+import LeadsPage from "@/pages/admin/LeadsPage";
+import FormBuilder from "@/pages/admin/FormBuilder";
+import ContentEditor from "@/pages/admin/ContentEditor";
+import ExportsPage from "@/pages/admin/ExportsPage";
+import CampaignsPage from "@/pages/admin/CampaignsPage";
+import SettingsPage from "@/pages/admin/SettingsPage";
+
+function App() {
+  return (
+    <div className="App">
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/admin/login" element={<AdminLogin />} />
+          <Route path="/admin" element={<AdminLayout />}>
+            <Route index element={<Dashboard />} />
+            <Route path="leads" element={<LeadsPage key="all" status="" title="Tous les leads" />} />
+            <Route path="leads/nouveaux" element={<LeadsPage key="nouveau" status="nouveau" title="Nouveaux leads" />} />
+            <Route path="leads/recuperes" element={<LeadsPage key="recupere" status="recupere" title="Leads récupérés" />} />
+            <Route path="leads/traites" element={<LeadsPage key="traite" status="traite" title="Leads traités" />} />
+            <Route path="leads/doublons" element={<LeadsPage key="doublon" status="doublon" title="Doublons" />} />
+            <Route path="formulaire" element={<FormBuilder />} />
+            <Route path="contenu" element={<ContentEditor />} />
+            <Route path="exports" element={<ExportsPage />} />
+            <Route path="campagnes" element={<CampaignsPage />} />
+            <Route path="parametres" element={<SettingsPage />} />
+          </Route>
+        </Routes>
+      </BrowserRouter>
+      <Toaster position="top-right" richColors />
+    </div>
+  );
+}
+
+export default App;

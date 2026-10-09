@@ -1,0 +1,89 @@
+@import url('https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,400..900;1,400..900&family=Outfit:wght@300;400;500;600;700&display=swap');
+
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+    :root {
+        --background: 0 0% 100%;
+        --foreground: 0 0% 3.9%;
+        --card: 0 0% 100%;
+        --card-foreground: 0 0% 3.9%;
+        --popover: 0 0% 100%;
+        --popover-foreground: 0 0% 3.9%;
+        --primary: 14 100% 62%;
+        --primary-foreground: 0 0% 100%;
+        --secondary: 0 0% 96.1%;
+        --secondary-foreground: 0 0% 9%;
+        --muted: 0 0% 96.1%;
+        --muted-foreground: 0 0% 45.1%;
+        --accent: 14 100% 97%;
+        --accent-foreground: 14 100% 40%;
+        --destructive: 0 84.2% 60.2%;
+        --destructive-foreground: 0 0% 98%;
+        --border: 0 0% 89.8%;
+        --input: 0 0% 89.8%;
+        --ring: 14 100% 62%;
+        --radius: 0.5rem;
+    }
+}
+
+@layer base {
+    * {
+        @apply border-border;
+    }
+    body {
+        @apply bg-background text-foreground;
+        font-family: 'Outfit', sans-serif;
+        -webkit-font-smoothing: antialiased;
+        -moz-osx-font-smoothing: grayscale;
+    }
+}
+
+.font-display {
+    font-family: 'Playfair Display', Georgia, serif;
+}
+
+.btn-primary-orange {
+    @apply bg-[#FF683D] hover:bg-[#FF914D] text-white font-semibold rounded-xl py-4 px-8 text-base md:text-lg transition-[background-color,box-shadow,transform] duration-300 shadow-[0_4px_14px_0_rgba(255,104,61,0.39)] hover:shadow-[0_6px_20px_rgba(255,104,61,0.30)] hover:-translate-y-0.5 inline-flex items-center justify-center gap-2;
+}
+
+.offer-box {
+    @apply border-2 border-[#FF683D] rounded-xl p-6 md:p-8 bg-[#101722]/60 backdrop-blur-sm;
+}
+
+.form-input-premium {
+    @apply bg-white border border-gray-200 text-[#0B111B] rounded-lg p-4 w-full focus:ring-2 focus:ring-[#FF683D] focus:border-transparent transition-[box-shadow,border-color] outline-none;
+}
+
+@layer base {
+    [data-debug-wrapper="true"] {
+        display: contents !important;
+    }
+    [data-debug-wrapper="true"] > * {
+        margin-left: inherit;
+        margin-right: inherit;
+        margin-top: inherit;
+        margin-bottom: inherit;
+        padding-left: inherit;
+        padding-right: inherit;
+        padding-top: inherit;
+        padding-bottom: inherit;
+        column-gap: inherit;
+        row-gap: inherit;
+        gap: inherit;
+        border-left-width: inherit;
+        border-right-width: inherit;
+        border-top-width: inherit;
+        border-bottom-width: inherit;
+        border-left-style: inherit;
+        border-right-style: inherit;
+        border-top-style: inherit;
+        border-bottom-style: inherit;
+        border-left-color: inherit;
+        border-right-color: inherit;
+        border-top-color: inherit;
+        border-bottom-color: inherit;
+    }
+}

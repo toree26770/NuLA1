@@ -1,0 +1,110 @@
+{
+  "theme": "dark",
+  "app_type": "hybrid_fullstack",
+  "design_concept": "Premium Dark Finance & Tech. Deep midnight blue background with a subtle laptop in the decor, paired with luminous orange accents for high-conversion CTAs. Elegant serif typography for headings to convey trust, wealth, and institutional authority, contrasting with a clean, high-density dashboard for the admin area.",
+  "typography": {
+    "headings": {
+      "family": "Playfair Display, serif",
+      "weights": ["400", "600", "700"],
+      "usage": "Use Playfair Display for all major headings, landing page titles, and the 'Claude.' logo. Convey elegance and authority."
+    },
+    "body": {
+      "family": "Outfit, sans-serif",
+      "weights": ["300", "400", "500", "600"],
+      "usage": "Use for all body text, form inputs, labels, and the entire admin dashboard for optimal readability."
+    },
+    "hierarchy": {
+      "h1": "text-4xl md:text-5xl lg:text-6xl tracking-tight leading-tight",
+      "h2": "text-3xl md:text-4xl tracking-tight",
+      "h3": "text-xl md:text-2xl",
+      "body": "text-base leading-relaxed",
+      "small": "text-sm tracking-wide"
+    }
+  },
+  "colors": {
+    "background": {
+      "midnight": "#101722",
+      "deep": "#0B111B",
+      "form_card": "#F8F6F2",
+      "admin_bg": "#F8F6F2",
+      "admin_sidebar": "#101722"
+    },
+    "brand": {
+      "orange": "#FF683D",
+      "orange_light": "#FF914D"
+    },
+    "text": {
+      "light": "#F8F6F2",
+      "dark": "#0B111B",
+      "muted_light": "rgba(248, 246, 242, 0.7)",
+      "muted_dark": "rgba(11, 17, 27, 0.6)"
+    },
+    "borders": {
+      "light": "rgba(255, 255, 255, 0.1)",
+      "dark": "rgba(11, 17, 27, 0.1)",
+      "orange": "#FF683D"
+    }
+  },
+  "layouts": {
+    "marketing_landing": {
+      "desktop": "Two-column grid layout. Left column (col-span-1 lg:col-span-7) contains visual identity, huge serif title, offer box, arguments. Right column (col-span-1 lg:col-span-5) contains the premium white form card.",
+      "mobile": "Single column. CRITICAL PRIORITY: Form must be immediately accessible. Fast loading, wide buttons, no horizontal scrolling.",
+      "background": "Hero section must have the laptop background image with a heavy dark navy overlay (bg-[#101722]/80 or 90) so text remains readable."
+    },
+    "admin_dashboard": {
+      "structure": "Sidebar navigation (dark theme #101722) + Main content area (clean light theme #F8F6F2).",
+      "spacing": "Dense layout for data. Use p-6 for main panels. Utilize Shadcn tables for leads management."
+    }
+  },
+  "components": {
+    "buttons": {
+      "primary": "bg-[#FF683D] hover:bg-[#FF914D] text-white rounded-xl py-4 px-8 text-lg font-semibold transition-all duration-300 shadow-[0_4px_14px_0_rgba(255,104,61,0.39)] hover:shadow-[0_6px_20px_rgba(255,104,61,0.23)] hover:-translate-y-0.5",
+      "secondary": "bg-transparent border border-[#FF683D] text-[#FF683D] hover:bg-[#FF683D]/10 rounded-xl"
+    },
+    "cards": {
+      "form_card": "bg-[#F8F6F2] rounded-2xl shadow-2xl p-6 md:p-8 text-[#0B111B] border border-white/20 relative overflow-hidden",
+      "offer_box": "border-2 border-[#FF683D] rounded-xl p-6 bg-[#101722]/50 backdrop-blur-sm"
+    },
+    "inputs": {
+      "style": "bg-white border border-gray-200 text-[#0B111B] rounded-lg p-4 w-full focus:ring-2 focus:ring-[#FF683D] focus:border-transparent transition-all",
+      "labels": "text-sm font-medium text-gray-700 mb-2 block"
+    }
+  },
+  "motion": {
+    "form_transitions": "Use Framer Motion for multi-step form progression. Slide in from right (x: 20, opacity: 0) to center (x: 0, opacity: 1) on step change.",
+    "hover": "Subtle lift (-translate-y-1) and shadow increase on interactive elements.",
+    "list_stagger": "Staggered fade-in for the 3 advantage icons/labels."
+  },
+  "image_urls": [
+    {
+      "url": "https://images.unsplash.com/photo-1531297484001-80022131f5a1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwyfHxsYXB0b3AlMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3OTE1NTAwMDZ8MA&ixlib=rb-4.1.0&q=85",
+      "category": "hero_background",
+      "description": "Dark and elegant laptop background for the landing page hero section. Must be covered with a dark blue overlay to ensure text readability."
+    },
+    {
+      "url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwyfHxmaW5hbmNlJTIwZ3JhcGglMjBkYXJrfGVufDB8fHx8MTc5MTU1MDAxMHww&ixlib=rb-4.1.0&q=85",
+      "category": "admin_dashboard_placeholder",
+      "description": "Financial stock market graph, can be used as a decorative element in the admin login page or dashboard empty states."
+    }
+  ],
+  "accessibility": {
+    "contrast": "Ensure the orange (#FF683D) on white (#F8F6F2) has sufficient contrast for text, if not, use it for large text or backgrounds only. White text on dark navy (#101722) passes AAA.",
+    "data_testid": "All form inputs, buttons, and navigation links MUST have data-testid attributes for testing (e.g., data-testid='submit-lead-btn')."
+  },
+  "libraries": {
+    "icons": "lucide-react (use icons like Lock, TrendingUp, ShieldCheck, Asterisk)",
+    "motion": "framer-motion (for smooth form step transitions)",
+    "forms": "react-hook-form + zod (for rigorous validation)",
+    "components": "shadcn/ui (highly customized to match the premium theme)"
+  },
+  "instructions_to_main_agent": "Build a French-language premium landing page and admin dashboard. The landing page must perfectly mirror the provided Meta Ads reference: dark midnight blue background with a subtle laptop image, a prominent white serif 'Claude.' logo with an orange asterisk, and a 2-column layout. The left column holds the main serif headline ('Ne ratez pas l'entrée en Bourse...'), an orange-bordered offer box ('LIVRET CLAUDE - TAUX FIXE 8,10%...'), and 3 advantage points with orange icons. The right column holds a white, rounded form card with an 'OFFRE LIMITÉE' eyebrow, an elegant multi-step form, and wide orange rounded buttons. Mobile responsiveness is the ABSOLUTE PRIORITY. The admin area (/admin) should be a clean, modern SaaS dashboard with a dark sidebar and light content area, including a drag-and-drop form builder, lead management with CSV export, and Meta campaign tracking. Do NOT use completely transparent backgrounds behind text. Make sure to use Playfair Display for headings and Outfit for body text.",
+  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
+    "Do not use default generic centered layouts. Follow the explicit 2-column asymmetrical layout for desktop.",
+    "Never use `transition: all`. Specify exact properties (e.g., `transition-colors`, `transition-transform`).",
+    "Add `data-testid` to all interactive elements.",
+    "Use generous padding. Cramped designs look cheap, and this must look like a premium institutional investment.",
+    "Ensure all text is in French as requested.",
+    "Mobile layout must stack cleanly without horizontal scroll. Form must be high up on mobile.",
+    "Use Shadcn components for complex interactions but heavily style them using Tailwind to match the custom #101722 and #FF683D color scheme."
+  ]
+}

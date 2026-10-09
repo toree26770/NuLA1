@@ -1,0 +1,322 @@
+from datetime import datetime, timezone, timedelta
+
+from fastapi import APIRouter, Depends, HTTPException, Query, Response
+from pydantic import BaseModel
+
+from auth import get_current_admin
+from csv_utils import FIXED_KEYS, build_leads_csv
+from database import db, get_settings, new_id, now_iso
+
+router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
+
+LEAD_STATUSES = ["nouveau", "recupere", "traite", "doublon", "invalide"]
+
+
+# ---------- Statistiques ----------
+
+@router.get("/stats")
+async def get_stats():
+    now = datetime.now(timezone.utc)
+    today_start = now.replace(hour=0, minute=0, second=0, microsecond=0).isoformat()
+    d7 = (now - timedelta(days=7)).isoformat()
+    d30 = (now - timedelta(days=30)).isoformat()
+
+    total = await db.leads.count_documents({})
+    today = await db.leads.count_documents({"created_at": {"$gte": today_start}})
+    last7 = await db.leads.count_documents({"created_at": {"$gte": d7}})
+    last30 = await db.leads.count_documents({"created_at": {"$gte": d30}})
+
+    by_status = {}
+    for s in LEAD_STATUSES:
+        by_status[s] = await db.leads.count_documents({"status": s})
+
+    per_day = await db.leads.aggregate([
+        {"$match": {"created_at": {"$gte": d30}}},
+        {"$group": {"_id": {"$substr": ["$created_at", 0, 10]}, "count": {"$sum": 1}}},
+        {"$sort": {"_id": 1}},
+    ]).to_list(40)
+
+    by_campaign = await db.leads.aggregate([
+        {"$group": {"_id": {"$ifNull": ["$utm_campaign", "(direct)"]}, "count": {"$sum": 1}}},
+        {"$sort": {"count": -1}},
+        {"$limit": 10},
+    ]).to_list(10)
+
+    by_amount = await db.leads.aggregate([
+        {"$match": {"amount_range": {"$ne": ""}}},
+        {"$group": {"_id": "$amount_range", "count": {"$sum": 1}}},
+    ]).to_list(10)
+
+    return {
+        "total": total, "today": today, "last7": last7, "last30": last30,
+        "by_status": by_status,
+        "per_day": [{"date": d["_id"], "count": d["count"]} for d in per_day],
+        "by_campaign": [{"campaign": c["_id"], "count": c["count"]} for c in by_campaign],
+        "by_amount": [{"amount": a["_id"], "count": a["count"]} for a in by_amount],
+    }
+
+
+# ---------- Leads ----------
+
+@router.get("/leads")
+async def list_leads(
+    status: str = Query(""),
+    q: str = Query(""),
+    campaign: str = Query(""),
+    amount: str = Query(""),
+    date_from: str = Query(""),
+    date_to: str = Query(""),
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=200),
+):
+    query = {}
+    if status in LEAD_STATUSES:
+        query["status"] = status
+    if campaign:
+        query["$or"] = [{"utm_campaign": campaign}, {"campaign_id": campaign}]
+    if amount:
+        query["amount_range"] = amount
+    if date_from:
+        query.setdefault("created_at", {})["$gte"] = date_from
+    if date_to:
+        query.setdefault("created_at", {})["$lte"] = date_to + "T23:59:59"
+    if q:
+        q = q.strip()
+        query["$or"] = [
+            {"first_name": {"$regex": q, "$options": "i"}},
+            {"last_name": {"$regex": q, "$options": "i"}},
+            {"email_normalized": {"$regex": q, "$options": "i"}},
+            {"phone_e164": {"$regex": q.replace(" ", "")}},
+        ]
+    total = await db.leads.count_documents(query)
+    leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
+    return {"leads": leads, "total": total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
+
+
+@router.get("/leads/{lead_id}")
+async def get_lead(lead_id: str):
+    lead = await db.leads.find_one({"id": lead_id}, {"_id": 0})
+    if not lead:
+        raise HTTPException(status_code=404, detail="Lead introuvable")
+    answers = await db.lead_answers.find({"lead_id": lead_id}, {"_id": 0}).to_list(200)
+    return {"lead": lead, "answers": answers}
+
+
+class StatusUpdate(BaseModel):
+    status: str
+
+
+@router.patch("/leads/{lead_id}/status")
+async def update_lead_status(lead_id: str, body: StatusUpdate):
+    if body.status not in LEAD_STATUSES:
+        raise HTTPException(status_code=400, detail="Statut invalide")
+    result = await db.leads.update_one(
+        {"id": lead_id},
+        {"$set": {"status": body.status, "updated_at": now_iso()}},
+    )
+    if result.matched_count == 0:
+        raise HTTPException(status_code=404, detail="Lead introuvable")
+    return {"ok": True}
+
+
+@router.get("/campaigns")
+async def get_campaigns():
+    rows = await db.leads.aggregate([
+        {"$group": {
+            "_id": {"$ifNull": ["$utm_campaign", "(direct)"]},
+            "total": {"$sum": 1},
+            "nouveau": {"$sum": {"$cond": [{"$eq": ["$status", "nouveau"]}, 1, 0]}},
+            "recupere": {"$sum": {"$cond": [{"$eq": ["$status", "recupere"]}, 1, 0]}},
+            "traite": {"$sum": {"$cond": [{"$eq": ["$status", "traite"]}, 1, 0]}},
+            "doublon": {"$sum": {"$cond": [{"$eq": ["$status", "doublon"]}, 1, 0]}},
+        }},
+        {"$sort": {"total": -1}},
+        {"$limit": 100},
+    ]).to_list(100)
+    amounts = await db.leads.aggregate([
+        {"$match": {"amount_range": {"$ne": ""}}},
+        {"$group": {"_id": {"campaign": {"$ifNull": ["$utm_campaign", "(direct)"]}, "amount": "$amount_range"}, "count": {"$sum": 1}}},
+    ]).to_list(500)
+    amount_map = {}
+    for a in amounts:
+        amount_map.setdefault(a["_id"]["campaign"], {})[a["_id"]["amount"]] = a["count"]
+    return {
+        "campaigns": [
+            {
+                "campaign": r["_id"], "total": r["total"], "nouveau": r["nouveau"],
+                "recupere": r["recupere"], "traite": r["traite"], "doublon": r["doublon"],
+                "amounts": amount_map.get(r["_id"], {}),
+            }
+            for r in rows
+        ]
+    }
+
+
+@router.get("/security-logs")
+async def get_security_logs():
+    logs = await db.security_logs.find({}, {"_id": 0}).sort("created_at", -1).limit(100).to_list(100)
+    counts = {}
+    for row in await db.security_logs.aggregate([{"$group": {"_id": "$event_type", "count": {"$sum": 1}}}]).to_list(20):
+        counts[row["_id"]] = row["count"]
+    return {"logs": logs, "counts": counts}
+
+
+# ---------- Contenu & paramètres ----------
+
+@router.get("/content")
+async def admin_get_content():
+    return await db.site_content.find_one({"key": "site_content"}, {"_id": 0})
+
+
+@router.put("/content")
+async def admin_put_content(body: dict):
+    body.pop("_id", None)
+    body["key"] = "site_content"
+    await db.site_content.replace_one({"key": "site_content"}, body, upsert=True)
+    return {"ok": True}
+
+
+@router.get("/settings")
+async def admin_get_settings():
+    return await get_settings()
+
+
+@router.put("/settings")
+async def admin_put_settings(body: dict):
+    allowed = {}
+    for key in ("dup_window_days", "min_submit_seconds", "rate_limit_per_hour", "retention_days"):
+        if key in body:
+            try:
+                allowed[key] = max(0, int(body[key]))
+            except (ValueError, TypeError):
+                raise HTTPException(status_code=400, detail=f"Valeur invalide pour {key}")
+    if "consent_version" in body:
+        allowed["consent_version"] = str(body["consent_version"])[:50]
+    await db.settings.update_one({"key": "settings"}, {"$set": allowed}, upsert=True)
+    return {"ok": True}
+
+
+# ---------- Exports CSV ----------
+
+async def _collect_extra_labels(lead_ids):
+    answers = await db.lead_answers.find(
+        {"lead_id": {"$in": lead_ids}}, {"_id": 0}
+    ).to_list(100000)
+    labels = []
+    answers_by_lead = {}
+    for a in answers:
+        label = a["question_label_snapshot"]
+        if a.get("question_key") in FIXED_KEYS or label in ("Consentement",):
+            continue
+        if label not in labels:
+            labels.append(label)
+        answers_by_lead.setdefault(a["lead_id"], {})[label] = a.get("answer_value", "")
+    return labels, answers_by_lead
+
+
+async def _render_batch_csv(batch):
+    leads = await db.leads.find({"id": {"$in": batch["lead_ids"]}}, {"_id": 0}).sort("created_at", 1).to_list(len(batch["lead_ids"]))
+    labels, answers_by_lead = await _collect_extra_labels(batch["lead_ids"])
+    return build_leads_csv(leads, answers_by_lead, labels)
+
+
+@router.post("/exports/new-leads")
+async def export_new_leads(admin=Depends(get_current_admin)):
+    pending = await db.export_batches.find_one({"status": "pending"})
+    if pending:
+        raise HTTPException(status_code=409, detail="Un export est déjà en attente de téléchargement", headers={"X-Batch-Id": pending["id"]})
+    leads = await db.leads.find({"status": "nouveau"}, {"_id": 0, "id": 1}).sort("created_at", 1).to_list(5000)
+    if not leads:
+        raise HTTPException(status_code=400, detail="Aucun nouveau lead à exporter")
+    count = await db.export_batches.count_documents({})
+    batch = {
+        "id": new_id(),
+        "batch_number": count + 1,
+        "kind": "new",
+        "created_at": now_iso(),
+        "created_by": admin["email"],
+        "status": "pending",
+        "lead_count": len(leads),
+        "lead_ids": [l["id"] for l in leads],
+    }
+    await db.export_batches.insert_one(batch)
+    batch.pop("_id", None)
+    batch.pop("lead_ids", None)
+    return batch
+
+
+class CustomExport(BaseModel):
+    lead_ids: list = []
+    filters: dict = {}
+
+
+@router.post("/exports/custom")
+async def export_custom(body: CustomExport, admin=Depends(get_current_admin)):
+    if body.lead_ids:
+        leads = await db.leads.find({"id": {"$in": body.lead_ids}}, {"_id": 0, "id": 1}).to_list(10000)
+    else:
+        query = {}
+        f = body.filters or {}
+        if f.get("status") in LEAD_STATUSES:
+            query["status"] = f["status"]
+        if f.get("campaign"):
+            query["$or"] = [{"utm_campaign": f["campaign"]}, {"campaign_id": f["campaign"]}]
+        if f.get("date_from"):
+            query.setdefault("created_at", {})["$gte"] = f["date_from"]
+        if f.get("date_to"):
+            query.setdefault("created_at", {})["$lte"] = f["date_to"] + "T23:59:59"
+        leads = await db.leads.find(query, {"_id": 0, "id": 1}).sort("created_at", 1).to_list(10000)
+    if not leads:
+        raise HTTPException(status_code=400, detail="Aucun lead correspondant")
+    count = await db.export_batches.count_documents({})
+    batch = {
+        "id": new_id(),
+        "batch_number": count + 1,
+        "kind": "custom",
+        "created_at": now_iso(),
+        "created_by": admin["email"],
+        "status": "downloaded",
+        "lead_count": len(leads),
+        "lead_ids": [l["id"] for l in leads],
+        "filters": body.filters or {},
+    }
+    await db.export_batches.insert_one(batch)
+    return {"id": batch["id"], "batch_number": batch["batch_number"], "lead_count": batch["lead_count"]}
+
+
+@router.get("/exports")
+async def list_exports():
+    batches = await db.export_batches.find({}, {"_id": 0, "lead_ids": 0}).sort("created_at", -1).limit(200).to_list(200)
+    return {"exports": batches}
+
+
+@router.get("/exports/{batch_id}/download")
+async def download_export(batch_id: str):
+    batch = await db.export_batches.find_one({"id": batch_id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    csv_bytes = await _render_batch_csv(batch)
+    if batch["status"] == "pending" and batch.get("kind") == "new":
+        # Le téléchargement confirme la récupération : les leads passent en RÉCUPÉRÉ
+        await db.leads.update_many(
+            {"id": {"$in": batch["lead_ids"]}, "status": "nouveau"},
+            {"$set": {"status": "recupere", "retrieved_at": now_iso(), "export_batch_id": batch_id, "updated_at": now_iso()}},
+        )
+        await db.export_batches.update_one({"id": batch_id}, {"$set": {"status": "downloaded"}})
+    filename = f"leads_lot_{batch['batch_number']:04d}.csv"
+    return Response(
+        content=csv_bytes,
+        media_type="text/csv; charset=utf-8",
+        headers={"Content-Disposition": f'attachment; filename="{filename}"'},
+    )
+
+
+@router.post("/exports/{batch_id}/cancel")
+async def cancel_export(batch_id: str):
+    batch = await db.export_batches.find_one({"id": batch_id})
+    if not batch:
+        raise HTTPException(status_code=404, detail="Lot introuvable")
+    if batch["status"] != "pending":
+        raise HTTPException(status_code=400, detail="Ce lot n'est plus en attente")
+    await db.export_batches.delete_one({"id": batch_id})
+    return {"ok": True}

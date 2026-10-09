@@ -1,0 +1,16 @@
+# Livret Claude — Demande d'informations
+
+Page de demande d'informations autour de l'offre « Livret Claude » présentée dans une communication publicitaire sur le thème de l'intelligence artificielle.
+
+## Ce que propose le site
+- Présentation de l'offre et de ses caractéristiques (conditions, risques, documents contractuels).
+- Formulaire de demande d'informations gratuit et sans engagement, sans obligation de souscription.
+- FAQ sur la gratuite de la demande, l'absence d'obligation d'investir, les risques et les garanties.
+- Mentions légales et politique de confidentialité.
+
+## Pages
+- / : landing page avec formulaire de demande d'informations.
+- /admin : espace privé réservé à l'administrateur (ne pas indexer).
+
+## Note
+Ce site ne constitue ni une offre de souscription ni un conseil en investissement. Toute caractéristique de produit (taux, garantie, conditions) n'est publiée qu'après vérification documentaire par l'éditeur du site.
