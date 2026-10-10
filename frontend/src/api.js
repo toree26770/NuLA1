@@ -29,6 +29,14 @@ export function trackEvent(event, { step_index = null, meta = {} } = {}) {
   }
 }
 
+export function trackDefense(event, { step_index = null, meta = {} } = {}) {
+  try {
+    API.post("/defense/track", { session_id: getSessionId(), event, step_index, meta }).catch(() => {});
+  } catch {
+    /* ne jamais bloquer l'UI pour du suivi */
+  }
+}
+
 export function fmtError(e) {
   const d = e?.response?.data?.detail;
   if (!d) return e?.message || "Erreur réseau. Réessayez.";

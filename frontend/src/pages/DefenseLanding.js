@@ -4,12 +4,32 @@ import {
   ShieldCheck, TrendingUp, CalendarCheck, Wallet, Lock, FileText, Users, PhoneCall,
   ChevronDown, Check, ArrowRight,
 } from "lucide-react";
-import { API, getSessionId } from "@/api";
+import { API, getSessionId, trackDefense } from "@/api";
 import { loadPixels, trackSingle } from "@/metaPixel";
 
 const NAVY = "#071D3A";
 const fade = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6, ease: "easeOut" } };
 const heroFade = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, ease: "easeOut" } };
+
+const FR_PREFIXES = [
+  { code: "+33", label: "🇫🇷 France (+33)" },
+  { code: "+590", label: "🇬🇵 Guadeloupe (+590)" },
+  { code: "+596", label: "🇲🇶 Martinique (+596)" },
+  { code: "+594", label: "🇬🇫 Guyane (+594)" },
+  { code: "+262", label: "🇷🇪 Réunion (+262)" },
+  { code: "+262", label: "🇾🇹 Mayotte (+262)" },
+  { code: "+508", label: "🇵🇲 Saint-Pierre-et-Miquelon (+508)" },
+  { code: "+590", label: "🇧🇱 Saint-Barthélemy (+590)" },
+  { code: "+590", label: "🇲🇫 Saint-Martin (+590)" },
+  { code: "+687", label: "🇳🇨 Nouvelle-Calédonie (+687)" },
+  { code: "+689", label: "🇵🇫 Polynésie française (+689)" },
+  { code: "+681", label: "🇼🇫 Wallis-et-Futuna (+681)" },
+];
+
+function composePhone(prefix, local) {
+  const digits = (local || "").replace(/[^\d]/g, "").replace(/^0+/, "");
+  return digits ? `${prefix}${digits}` : "";
+}
 
 const FEATURES = [
   { icon: TrendingUp, title: "7,10 % net annuel", text: "Un rendement annoncé, présenté avec ses conditions d'application selon les documents contractuels." },
@@ -87,12 +107,48 @@ function EligibilityForm({ idPrefix = "defense" }) {
   const tid = (s) => `${idPrefix}-${s}`;
   const [step, setStep] = useState(0);
   const [data, setData] = useState({ first_name: "", last_name: "", phone: "", email: "", situation: "", consent: false });
+  const [phonePrefix, setPhonePrefix] = useState(0);
+  const [phoneLocal, setPhoneLocal] = useState("");
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
   const honey = useRef(null);
+  const startedAt = useRef(null);
+  const startedTracked = useRef(false);
 
-  const set = (k, v) => { setData((p) => ({ ...p, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); };
+  const touch = () => {
+    if (!startedTracked.current) {
+      startedTracked.current = true;
+      startedAt.current = new Date().toISOString();
+      trackDefense("form_start");
+    }
+  };
+
+  const set = (k, v) => { touch(); setData((p) => ({ ...p, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); };
+
+  const updatePhone = (idx, loc) => {
+    touch();
+    setPhonePrefix(idx);
+    setPhoneLocal(loc);
+    setData((p) => ({ ...p, phone: composePhone(FR_PREFIXES[idx].code, loc) }));
+    setErrors((e) => ({ ...e, phone: undefined }));
+  };
+
+  useEffect(() => { if (startedTracked.current) trackDefense("step_view", { step_index: step }); }, [step]);
+
+  useEffect(() => {
+    if (!startedTracked.current || done) return;
+    const t = setTimeout(() => {
+      let campaign = ""; try { campaign = localStorage.getItem("defense_campaign") || ""; } catch {}
+      API.post("/defense/leads/partial", {
+        session_id: getSessionId(),
+        step_index: step,
+        answers: { first_name: data.first_name, last_name: data.last_name, phone: data.phone, email: data.email, situation: data.situation },
+        meta: { campaign, website: honey.current?.value || "" },
+      }).catch(() => {});
+    }, 1500);
+    return () => clearTimeout(t);
+  }, [data, step, done]);
 
   const validateStep1 = () => {
     const e = {};
@@ -112,8 +168,9 @@ function EligibilityForm({ idPrefix = "defense" }) {
       const pixelIds = window.__defensePixelIds || [];
       await API.post("/defense/leads", {
         ...data,
-        meta: { session_id: getSessionId(), campaign, pixel_ids: pixelIds, website: honey.current?.value || "" },
+        meta: { session_id: getSessionId(), campaign, pixel_ids: pixelIds, started_at: startedAt.current, website: honey.current?.value || "" },
       });
+      trackDefense("form_submit");
       pixelIds.forEach((id) => trackSingle(id, "Lead"));
       setDone(true);
     } catch (err) {
@@ -168,7 +225,29 @@ function EligibilityForm({ idPrefix = "defense" }) {
           </div>
           <div>
             <label className={lbl}>Téléphone</label>
-            <input data-testid={tid("phone")} type="tel" className={inputCls} placeholder="06 12 34 56 78" value={data.phone} onChange={(e) => set("phone", e.target.value)} />
+            <div className="flex items-stretch gap-2">
+              <select
+                data-testid={tid("phone-prefix")}
+                aria-label="Indicatif"
+                value={phonePrefix}
+                onChange={(e) => updatePhone(Number(e.target.value), phoneLocal)}
+                className={`${inputCls} !w-auto !px-2 shrink-0 max-w-[9.5rem] text-sm cursor-pointer`}
+              >
+                {FR_PREFIXES.map((p, i) => (
+                  <option key={i} value={i}>{p.label}</option>
+                ))}
+              </select>
+              <input
+                data-testid={tid("phone")}
+                type="tel"
+                inputMode="tel"
+                className={inputCls}
+                placeholder="6 12 34 56 78"
+                value={phoneLocal}
+                onChange={(e) => updatePhone(phonePrefix, e.target.value)}
+                autoComplete="tel"
+              />
+            </div>
             {errors.phone && <p className="mt-1 text-xs text-[#C8102E]">{errors.phone}</p>}
           </div>
           <div>
@@ -222,6 +301,7 @@ export default function DefenseLanding() {
   }, []);
 
   useEffect(() => {
+    trackDefense("page_view", { meta: { campaign } });
     API.get(`/defense/pixels/active${campaign ? `?campaign=${encodeURIComponent(campaign)}` : ""}`).then((r) => {
       const ids = (r.data.pixels || []).map((p) => p.pixel_id);
       window.__defensePixelIds = ids;
@@ -269,6 +349,17 @@ export default function DefenseLanding() {
                 </li>
               ))}
             </ul>
+            <div className="mt-9 relative overflow-hidden rounded-2xl ring-1 ring-[#163A63]/15 shadow-lg" data-testid="hero-image">
+              <div className="h-1.5 w-full"><Tricolore /></div>
+              <img
+                src="https://static.prod-images.emergentagent.com/jobs/b2757569-a5af-4725-afd6-41a8a894534e/images/0ad954386dc24d6142b3b93f3006bf9f1afbaae54aaeaaa5471d879e843aef53.jpeg"
+                alt="Militaire français en tenue moderne devant le drapeau tricolore"
+                className="h-56 w-full object-cover object-center"
+              />
+              <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-[#071D3A]/90 via-[#071D3A]/40 to-transparent px-5 pb-4 pt-10">
+                <p className="text-sm font-semibold text-white font-['Manrope']">Une épargne qui porte les valeurs de la Défense française.</p>
+              </div>
+            </div>
           </motion.div>
 
           <motion.div {...heroFade} transition={{ duration: 0.7, delay: 0.1 }} className="relative">
@@ -363,6 +454,29 @@ export default function DefenseLanding() {
               </motion.div>
             ))}
           </div>
+        </div>
+      </section>
+
+      {/* Secteur de la défense */}
+      <section id="secteur" className="bg-[#071D3A] text-white">
+        <div className="mx-auto max-w-6xl px-5 py-16 lg:py-20">
+          <motion.div {...fade} className="max-w-3xl">
+            <span className="inline-flex items-center gap-2 rounded-full border border-white/15 bg-white/5 px-3.5 py-1.5 text-xs font-semibold uppercase tracking-wide text-white/70">
+              <span className="h-3 w-5 overflow-hidden rounded-[2px]"><Tricolore /></span> Souveraineté française
+            </span>
+            <h2 className="mt-5 font-['Bricolage_Grotesque'] text-3xl md:text-4xl font-extrabold tracking-tight">Au cœur de la croissance du secteur de la défense française</h2>
+            <p className="mt-4 text-white/70 leading-relaxed">
+              La défense et la souveraineté françaises s'appuient sur de grands acteurs industriels de référence. Le Livret d'Épargne Défense vous propose de placer votre épargne dans une thématique d'avenir, au service de l'autonomie stratégique de la France et de l'Europe.
+            </p>
+          </motion.div>
+          <motion.div {...fade} transition={{ duration: 0.6, delay: 0.1 }} className="mt-10 grid grid-cols-2 sm:grid-cols-4 gap-4">
+            {["Thales", "Safran", "Dassault Aviation", "Airbus"].map((name) => (
+              <div key={name} className="flex items-center justify-center rounded-xl border border-white/10 bg-white/[0.04] px-4 py-6 text-center" data-testid={`sector-${name.split(" ")[0].toLowerCase()}`}>
+                <span className="font-['Bricolage_Grotesque'] text-lg font-bold tracking-tight text-white/90">{name}</span>
+              </div>
+            ))}
+          </motion.div>
+          <p className="mt-6 text-xs text-white/40">Les noms et marques cités appartiennent à leurs propriétaires respectifs et sont mentionnés à titre illustratif du secteur d'activité.</p>
         </div>
       </section>
 

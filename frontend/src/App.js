@@ -14,6 +14,14 @@ import ContentEditor from "@/pages/admin/ContentEditor";
 import ExportsPage from "@/pages/admin/ExportsPage";
 import CampaignsPage from "@/pages/admin/CampaignsPage";
 import SettingsPage from "@/pages/admin/SettingsPage";
+import DefenseAdminLayout from "@/pages/defense/DefenseAdminLayout";
+import DefenseAdminLogin from "@/pages/defense/DefenseAdminLogin";
+import DefenseDashboard from "@/pages/defense/DefenseDashboard";
+import DefenseLeadsPage from "@/pages/defense/DefenseLeadsPage";
+import DefensePartialLeadsPage from "@/pages/defense/DefensePartialLeadsPage";
+import DefenseExportsPage from "@/pages/defense/DefenseExportsPage";
+import DefensePixelsPage from "@/pages/defense/DefensePixelsPage";
+import DefenseSettingsPage from "@/pages/defense/DefenseSettingsPage";
 
 function App() {
   return (
@@ -22,6 +30,15 @@ function App() {
         <Routes>
           <Route path="/" element={<LandingPage />} />
           <Route path="/defense" element={<DefenseLanding />} />
+          <Route path="/defense/admin/login" element={<DefenseAdminLogin />} />
+          <Route path="/defense/admin" element={<DefenseAdminLayout />}>
+            <Route index element={<DefenseDashboard />} />
+            <Route path="leads" element={<DefenseLeadsPage />} />
+            <Route path="leads/incomplets" element={<DefensePartialLeadsPage />} />
+            <Route path="exports" element={<DefenseExportsPage />} />
+            <Route path="pixels" element={<DefensePixelsPage />} />
+            <Route path="parametres" element={<DefenseSettingsPage />} />
+          </Route>
           <Route path="/admin/login" element={<AdminLogin />} />
           <Route path="/admin" element={<AdminLayout />}>
             <Route index element={<Dashboard />} />

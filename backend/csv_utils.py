@@ -139,3 +139,35 @@ def build_partial_leads_csv(items):
         row.append(csv_safe(it.get("utm_campaign")))
         writer.writerow(row)
     return output.getvalue().encode("utf-8-sig")
+
+
+
+def build_defense_leads_csv(leads):
+    """CSV des prospects « Livret Défense » (formulaire statique, sans réponses dynamiques)."""
+    output = io.StringIO()
+    writer = csv.writer(output, delimiter=";", quoting=csv.QUOTE_ALL, lineterminator="\r\n")
+    header = [
+        "ID", "Date", "Heure", "Prénom", "Nom", "Téléphone", "E-mail",
+        "Situation", "Consentement", "Campagne", "Source", "FBCLID",
+        "Statut", "Date de récupération", "Notes",
+    ]
+    writer.writerow(header)
+    for lead in leads:
+        writer.writerow([
+            lead.get("id", ""),
+            fmt_date_fr(lead.get("created_at")),
+            fmt_time_fr(lead.get("created_at")),
+            csv_safe(lead.get("first_name")),
+            csv_safe(lead.get("last_name")),
+            csv_safe(lead.get("phone_e164")),
+            csv_safe(lead.get("email")),
+            csv_safe(lead.get("situation")),
+            "Oui" if lead.get("consent") else "Non",
+            csv_safe(lead.get("campaign") or lead.get("utm_campaign")),
+            csv_safe(lead.get("utm_source")),
+            csv_safe(lead.get("fbclid")),
+            STATUS_LABELS.get(lead.get("status"), lead.get("status", "")),
+            fmt_date_fr(lead.get("retrieved_at")) + (" " + fmt_time_fr(lead.get("retrieved_at")) if lead.get("retrieved_at") else ""),
+            csv_safe(lead.get("notes")),
+        ])
+    return output.getvalue().encode("utf-8-sig")

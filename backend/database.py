@@ -29,6 +29,18 @@ async def ensure_indexes():
     await db.security_logs.create_index("created_at")
     await db.login_attempts.create_index("identifier")
     await db.form_versions.create_index("status")
+    # Collections isolées « Livret Défense »
+    await db.defense_admin_users.create_index("email", unique=True)
+    await db.defense_leads.create_index("email")
+    await db.defense_leads.create_index("phone_e164")
+    await db.defense_leads.create_index("status")
+    await db.defense_leads.create_index("created_at")
+    await db.defense_leads.create_index("campaign")
+    await db.defense_partial_leads.create_index("session_id", unique=True)
+    await db.defense_analytics_events.create_index("created_at")
+    await db.defense_analytics_events.create_index("day")
+    await db.defense_login_attempts.create_index("identifier")
+    await db.defense_export_batches.create_index("created_at")
 
 
 async def log_security(event_type, metadata=None):
