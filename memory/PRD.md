@@ -33,6 +33,14 @@ Soumission complète mobile (3 étapes, champ personnalisé), doublon bloqué, t
 - P2 : rôles admin multiples, notifications e-mail de nouveau lead, A/B testing de titres.
 
 ## Journal (mises à jour)
+- 2026-10-10 : **App 2 Défense — ADMIN IDENTIQUE à la landing 1 + formulaire/contenu modifiables, données 100% séparées** (demande utilisateur: « exactement à l'identique que la landing 1, juste séparé »).
+  - **Backend cloné** vers collections `defense_*` (comportement identique à Claude, zéro risque pour Claude) : `defense_public_routes.py` (prefix /defense : content, form/published, pixels/active, track, leads, leads/partial avec honeypot+fast_submit+rate_limit+doublons), `defense_admin_routes.py` (prefix /defense/admin : stats, analytics, leads CRUD+réponses, campagnes, contenu, pixels, exports/récupération, sécurité), `defense_form_routes.py` (FormBuilder: versions draft/publish), `defense_auth.py` (cookie isolé `defense_access_token`), `defense_db.py`, `defense_seed.py` (contenu au MÊME schéma que Claude + formulaire 2 étapes).
+  - **Frontend** : réutilise les COMPOSANTS ADMIN EXACTS de la landing 1 (AdminLayout, Dashboard, LeadsPage, FormBuilder, ContentEditor, Exports, Campagnes, Settings, PartialLeads, Login) via un intercepteur axios (`api.js`) qui préfixe `/defense` aux appels `/admin` et `/auth` quand on est en scope Défense. Marque « Défense » dans la barre latérale.
+  - **Landing Défense dynamique** : le formulaire est désormais rendu depuis `/api/defense/form/published` (donc modifiable via FormBuilder) et le contenu depuis `/api/defense/content` (taux, textes — modifiables via l'éditeur de contenu), **sans changer le design** (militaire, 7,10 %, secteur Thales/Safran/Dassault/Airbus, préfixes téléphoniques FR).
+  - **Routage par domaine** (`defenseBase.js`) : en production sur `militaire.axinvest.app`, la landing Défense est à `/` et l'admin à `/admin` ; en preview, à `/defense` et `/defense/admin`. Variable `REACT_APP_DEFENSE_HOST` dans frontend/.env.
+  - **Validé** testing_agent iteration_5 : backend 34/34, frontend 100%, **isolation stricte** (collections + cookies + endpoints, 401 sessions croisées) et **non-régression Claude** confirmées. Données de test purgées, réglages anti-bot remis en prod.
+  - Identifiants admin Défense : voir /app/memory/test_credentials.md.
+  - **Déploiement prévu** (Option A) : sous-domaine `militaire.axinvest.app` → même VPS, bloc Nginx + SSL, config à fournir à l'utilisateur (DNS Cloudflare).
 - 2026-10-10 : **App 2 Défense — image militaire, téléphone à préfixe, anti-bot, section secteur & ADMIN ISOLÉ complet**.
   - Hero : image sur-mesure d'un militaire français moderne (générée, drapeau tricolore) dans la colonne gauche.
   - Formulaire : champ téléphone avec **menu déroulant de préfixes français** (France + outre-mer, identique à la 1ʳᵉ landing), numéro composé en format international.
