@@ -103,12 +103,19 @@ function CookieBanner({ onAccept }) {
   );
 }
 
-function EligibilityForm({ idPrefix = "defense" }) {
+function EligibilityForm({ idPrefix = "defense", form, content }) {
   const tid = (s) => `${idPrefix}-${s}`;
+  const steps = (form?.steps || []);
+  const questionsByStep = useMemo(() => {
+    const map = {};
+    (form?.questions || []).forEach((q) => { (map[q.step_id] = map[q.step_id] || []).push(q); });
+    return map;
+  }, [form]);
+  const ft = content?.form_texts || {};
+
   const [step, setStep] = useState(0);
-  const [data, setData] = useState({ first_name: "", last_name: "", phone: "", email: "", situation: "", consent: false });
-  const [phonePrefix, setPhonePrefix] = useState(0);
-  const [phoneLocal, setPhoneLocal] = useState("");
+  const [answers, setAnswers] = useState({});
+  const [phones, setPhones] = useState({}); // key -> {prefix, local}
   const [errors, setErrors] = useState({});
   const [submitting, setSubmitting] = useState(false);
   const [done, setDone] = useState(false);
@@ -124,14 +131,13 @@ function EligibilityForm({ idPrefix = "defense" }) {
     }
   };
 
-  const set = (k, v) => { touch(); setData((p) => ({ ...p, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); };
+  const set = (k, v) => { touch(); setAnswers((p) => ({ ...p, [k]: v })); setErrors((e) => ({ ...e, [k]: undefined })); };
 
-  const updatePhone = (idx, loc) => {
+  const updatePhone = (k, idx, loc) => {
     touch();
-    setPhonePrefix(idx);
-    setPhoneLocal(loc);
-    setData((p) => ({ ...p, phone: composePhone(FR_PREFIXES[idx].code, loc) }));
-    setErrors((e) => ({ ...e, phone: undefined }));
+    setPhones((p) => ({ ...p, [k]: { prefix: idx, local: loc } }));
+    setAnswers((p) => ({ ...p, [k]: composePhone(FR_PREFIXES[idx].code, loc) }));
+    setErrors((e) => ({ ...e, [k]: undefined }));
   };
 
   useEffect(() => { if (startedTracked.current) trackDefense("step_view", { step_index: step }); }, [step]);
@@ -141,33 +147,40 @@ function EligibilityForm({ idPrefix = "defense" }) {
     const t = setTimeout(() => {
       let campaign = ""; try { campaign = localStorage.getItem("defense_campaign") || ""; } catch {}
       API.post("/defense/leads/partial", {
-        session_id: getSessionId(),
-        step_index: step,
-        answers: { first_name: data.first_name, last_name: data.last_name, phone: data.phone, email: data.email, situation: data.situation },
+        session_id: getSessionId(), step_index: step, answers,
         meta: { campaign, website: honey.current?.value || "" },
       }).catch(() => {});
     }, 1500);
     return () => clearTimeout(t);
-  }, [data, step, done]);
+  }, [answers, step, done]);
 
-  const validateStep1 = () => {
+  const validateStep = (idx) => {
     const e = {};
-    if (!data.first_name.trim()) e.first_name = "Prénom requis";
-    if (!data.last_name.trim()) e.last_name = "Nom requis";
-    if (!/^(?:\+?\d{8,15}|0\d{9})$/.test(data.phone.replace(/[\s.\-]/g, ""))) e.phone = "Numéro invalide";
-    if (!/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(data.email)) e.email = "E-mail invalide";
+    (questionsByStep[steps[idx]?.id] || []).forEach((q) => {
+      const v = answers[q.question_key];
+      if (q.field_type === "checkbox") {
+        if (q.required && v !== true) e[q.question_key] = "Votre accord est requis.";
+      } else if (q.required && (!v || String(v).trim() === "")) {
+        e[q.question_key] = "Ce champ est requis.";
+      } else if (q.field_type === "email" && v && !/^[^@\s]+@[^@\s]+\.[^@\s]+$/.test(v)) {
+        e[q.question_key] = "E-mail invalide.";
+      } else if (q.field_type === "phone" && v && !/^\+?\d{8,15}$/.test(String(v).replace(/[\s.\-]/g, ""))) {
+        e[q.question_key] = "Numéro invalide.";
+      }
+    });
     setErrors(e);
     return Object.keys(e).length === 0;
   };
 
   const submit = async () => {
-    if (!data.consent) { setErrors((e) => ({ ...e, consent: "Votre consentement est requis." })); return; }
+    if (!validateStep(step)) return;
     setSubmitting(true);
     try {
       const campaign = (() => { try { return localStorage.getItem("defense_campaign") || ""; } catch { return ""; } })();
       const pixelIds = window.__defensePixelIds || [];
       await API.post("/defense/leads", {
-        ...data,
+        form_version_id: form.version.id,
+        answers,
         meta: { session_id: getSessionId(), campaign, pixel_ids: pixelIds, started_at: startedAt.current, website: honey.current?.value || "" },
       });
       trackDefense("form_submit");
@@ -175,14 +188,17 @@ function EligibilityForm({ idPrefix = "defense" }) {
       setDone(true);
     } catch (err) {
       const d = err?.response?.data?.detail;
-      if (d && typeof d === "object") setErrors(d);
-      else setErrors({ email: typeof d === "string" ? d : "Une erreur est survenue. Réessayez." });
-      if (typeof d === "object") setStep(0);
+      if (d && typeof d === "object") { setErrors(d); setStep(0); }
+      else setErrors({ _global: typeof d === "string" ? d : "Une erreur est survenue. Réessayez." });
     } finally { setSubmitting(false); }
   };
 
   const inputCls = "w-full rounded-md border-2 border-[#163A63]/15 bg-[#F5F6F8] px-4 py-3 text-[#071D3A] shadow-[inset_0_1px_2px_rgba(7,29,58,0.05)] outline-none focus:border-[#163A63] focus:ring-4 focus:ring-[#163A63]/10 transition font-['Manrope']";
   const lbl = "block text-sm font-medium text-[#071D3A] mb-1.5 font-['Manrope']";
+
+  if (!form || !steps.length) {
+    return <div className="py-10 text-center text-[#071D3A]/50 font-['Manrope']" data-testid={tid("form-loading")}>Chargement du formulaire…</div>;
+  }
 
   if (done) {
     return (
@@ -190,101 +206,129 @@ function EligibilityForm({ idPrefix = "defense" }) {
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#163A63]/10">
           <Check className="h-8 w-8 text-[#163A63]" />
         </div>
-        <h3 className="font-['Bricolage_Grotesque'] text-2xl font-bold text-[#071D3A]">Votre demande a bien été enregistrée</h3>
-        <p className="mt-3 text-[#071D3A]/70 font-['Manrope']">Un conseiller pourra prendre contact avec vous prochainement pour vous présenter les informations relatives au Livret Défense.</p>
+        <h3 className="font-['Bricolage_Grotesque'] text-2xl font-bold text-[#071D3A]">{ft.confirm_title || "Votre demande a bien été enregistrée"}</h3>
+        <p className="mt-3 text-[#071D3A]/70 font-['Manrope']">{ft.confirm_text || "Un conseiller pourra prendre contact avec vous prochainement pour vous présenter les informations relatives au Livret Défense."}</p>
       </div>
     );
   }
 
+  const renderField = (q) => {
+    const k = q.question_key;
+    const v = answers[k];
+    const err = errors[k];
+    const errEl = err ? <p className="mt-1 text-xs text-[#C8102E]">{err}</p> : null;
+
+    if (q.field_type === "checkbox") {
+      return (
+        <div key={k}>
+          <label className="flex items-start gap-3 cursor-pointer rounded-md border border-[#163A63]/15 bg-[#F5F6F8] p-3.5">
+            <input type="checkbox" data-testid={tid("consent")} checked={v === true} onChange={(e) => set(k, e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#C8102E]" />
+            <span className="text-sm text-[#071D3A]/75 font-['Manrope']">{ft.consent_text || "J'accepte d'être recontacté(e) et la politique de confidentialité."}</span>
+          </label>
+          {errEl}
+        </div>
+      );
+    }
+
+    if (q.field_type === "phone") {
+      const ph = phones[k] || { prefix: 0, local: "" };
+      return (
+        <div key={k}>
+          <label className={lbl}>{q.label}</label>
+          <div className="flex items-stretch gap-2">
+            <select data-testid={tid("phone-prefix")} aria-label="Indicatif" value={ph.prefix} onChange={(e) => updatePhone(k, Number(e.target.value), ph.local)} className={`${inputCls} !w-auto !px-2 shrink-0 max-w-[9.5rem] text-sm cursor-pointer`}>
+              {FR_PREFIXES.map((p, i) => <option key={i} value={i}>{p.label}</option>)}
+            </select>
+            <input data-testid={tid("phone")} type="tel" inputMode="tel" className={inputCls} placeholder={q.placeholder || "6 12 34 56 78"} value={ph.local} onChange={(e) => updatePhone(k, ph.prefix, e.target.value)} autoComplete="tel" />
+          </div>
+          {errEl}
+        </div>
+      );
+    }
+
+    if (["select"].includes(q.field_type)) {
+      return (
+        <div key={k}>
+          <label className={lbl}>{q.label}</label>
+          <select data-testid={tid(k)} className={inputCls} value={v || ""} onChange={(e) => set(k, e.target.value)}>
+            <option value="">Sélectionnez…</option>
+            {(q.options || []).map((o) => <option key={o} value={o}>{o}</option>)}
+          </select>
+          {errEl}
+        </div>
+      );
+    }
+
+    if (["radio", "yesno", "cards"].includes(q.field_type)) {
+      const opts = q.options && q.options.length ? q.options : (q.field_type === "yesno" ? ["Oui", "Non"] : []);
+      return (
+        <div key={k}>
+          <label className={lbl}>{q.label}</label>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2.5" data-testid={tid(k)}>
+            {opts.map((o) => (
+              <button type="button" key={o} onClick={() => set(k, o)} className={`rounded-md border-2 px-4 py-3 text-left text-sm font-medium font-['Manrope'] transition-colors ${v === o ? "border-[#C8102E] bg-[#C8102E]/5 text-[#071D3A]" : "border-[#163A63]/15 bg-[#F5F6F8] text-[#071D3A]/80 hover:border-[#163A63]/30"}`}>{o}</button>
+            ))}
+          </div>
+          {errEl}
+        </div>
+      );
+    }
+
+    if (q.field_type === "textarea") {
+      return (
+        <div key={k}>
+          <label className={lbl}>{q.label}</label>
+          <textarea data-testid={tid(k)} rows={3} className={inputCls} placeholder={q.placeholder || ""} value={v || ""} onChange={(e) => set(k, e.target.value)} />
+          {errEl}
+        </div>
+      );
+    }
+
+    const inputType = q.field_type === "email" ? "email" : q.field_type === "date" ? "date" : (["number", "amount", "postal_code"].includes(q.field_type) ? "text" : "text");
+    const testKey = k === "first_name" ? "first-name" : k === "last_name" ? "last-name" : k;
+    return (
+      <div key={k}>
+        <label className={lbl}>{q.label}</label>
+        <input data-testid={tid(testKey)} type={inputType} className={inputCls} placeholder={q.placeholder || ""} value={v || ""} onChange={(e) => set(k, e.target.value)} />
+        {errEl}
+      </div>
+    );
+  };
+
+  const isLast = step === steps.length - 1;
+  const stepQuestions = questionsByStep[steps[step]?.id] || [];
+
   return (
     <div data-testid={tid("form")}>
       <div className="mb-6 flex items-center gap-3">
-        {[0, 1].map((i) => (
-          <div key={i} className="flex-1">
+        {steps.map((s, i) => (
+          <div key={s.id} className="flex-1">
             <div className={`h-1.5 rounded-full ${step >= i ? "bg-[#C8102E]" : "bg-[#163A63]/15"}`} />
-            <span className="mt-1.5 block text-xs font-medium text-[#071D3A]/60 font-['Manrope']">Étape {i + 1} sur 2</span>
+            <span className="mt-1.5 block text-xs font-medium text-[#071D3A]/60 font-['Manrope']">Étape {i + 1} sur {steps.length}</span>
           </div>
         ))}
       </div>
 
       <input ref={honey} type="text" name="website" tabIndex={-1} autoComplete="off" className="absolute -left-[9999px]" aria-hidden />
 
-      {step === 0 ? (
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            <div>
-              <label className={lbl}>Prénom</label>
-              <input data-testid={tid("first-name")} className={inputCls} value={data.first_name} onChange={(e) => set("first_name", e.target.value)} />
-              {errors.first_name && <p className="mt-1 text-xs text-[#C8102E]">{errors.first_name}</p>}
-            </div>
-            <div>
-              <label className={lbl}>Nom</label>
-              <input data-testid={tid("last-name")} className={inputCls} value={data.last_name} onChange={(e) => set("last_name", e.target.value)} />
-              {errors.last_name && <p className="mt-1 text-xs text-[#C8102E]">{errors.last_name}</p>}
-            </div>
-          </div>
-          <div>
-            <label className={lbl}>Téléphone</label>
-            <div className="flex items-stretch gap-2">
-              <select
-                data-testid={tid("phone-prefix")}
-                aria-label="Indicatif"
-                value={phonePrefix}
-                onChange={(e) => updatePhone(Number(e.target.value), phoneLocal)}
-                className={`${inputCls} !w-auto !px-2 shrink-0 max-w-[9.5rem] text-sm cursor-pointer`}
-              >
-                {FR_PREFIXES.map((p, i) => (
-                  <option key={i} value={i}>{p.label}</option>
-                ))}
-              </select>
-              <input
-                data-testid={tid("phone")}
-                type="tel"
-                inputMode="tel"
-                className={inputCls}
-                placeholder="6 12 34 56 78"
-                value={phoneLocal}
-                onChange={(e) => updatePhone(phonePrefix, e.target.value)}
-                autoComplete="tel"
-              />
-            </div>
-            {errors.phone && <p className="mt-1 text-xs text-[#C8102E]">{errors.phone}</p>}
-          </div>
-          <div>
-            <label className={lbl}>Adresse e-mail</label>
-            <input data-testid={tid("email")} type="email" className={inputCls} placeholder="vous@exemple.fr" value={data.email} onChange={(e) => set("email", e.target.value)} />
-            {errors.email && <p className="mt-1 text-xs text-[#C8102E]">{errors.email}</p>}
-          </div>
-          <button type="button" data-testid={tid("continue")} onClick={() => validateStep1() && setStep(1)} className="w-full rounded-md bg-[#071D3A] px-6 py-3.5 font-semibold text-white hover:bg-[#0c2a52] transition-colors font-['Manrope'] inline-flex items-center justify-center gap-2">
-            Continuer <ArrowRight className="h-4 w-4" />
-          </button>
-        </div>
-      ) : (
-        <div className="space-y-4">
-          <div>
-            <label className={lbl}>Votre situation</label>
-            <select data-testid={tid("situation")} className={inputCls} value={data.situation} onChange={(e) => set("situation", e.target.value)}>
-              <option value="">Sélectionnez…</option>
-              <option>Salarié(e)</option>
-              <option>Indépendant(e)</option>
-              <option>Retraité(e)</option>
-              <option>Militaire</option>
-              <option>Autre</option>
-            </select>
-          </div>
-          <label className="flex items-start gap-3 cursor-pointer rounded-md border border-[#163A63]/15 bg-[#F5F6F8] p-3.5">
-            <input type="checkbox" data-testid={tid("consent")} checked={data.consent} onChange={(e) => set("consent", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#C8102E]" />
-            <span className="text-sm text-[#071D3A]/75 font-['Manrope']">J'accepte d'être recontacté(e) et la <span className="underline decoration-[#163A63]/30">politique de confidentialité</span>.</span>
-          </label>
-          {errors.consent && <p className="text-xs text-[#C8102E]">{errors.consent}</p>}
-          <div className="flex gap-3">
-            <button type="button" onClick={() => setStep(0)} className="rounded-md border-2 border-[#163A63]/20 px-5 py-3.5 font-semibold text-[#071D3A] hover:bg-[#F5F6F8] transition-colors font-['Manrope']">Retour</button>
+      <div className="space-y-4">
+        {stepQuestions.map(renderField)}
+        {errors._global && <p className="text-xs text-[#C8102E]">{errors._global}</p>}
+        <div className="flex gap-3">
+          {step > 0 && (
+            <button type="button" onClick={() => setStep(step - 1)} className="rounded-md border-2 border-[#163A63]/20 px-5 py-3.5 font-semibold text-[#071D3A] hover:bg-[#F5F6F8] transition-colors font-['Manrope']">Retour</button>
+          )}
+          {isLast ? (
             <button type="button" data-testid={tid("submit")} onClick={submit} disabled={submitting} className="flex-1 rounded-md bg-[#C8102E] px-6 py-3.5 font-semibold text-white hover:bg-[#a60d26] transition-colors font-['Manrope'] disabled:opacity-60">
-              {submitting ? "Envoi…" : "Valider ma demande"}
+              {submitting ? "Envoi…" : (ft.submit_label || "Valider ma demande")}
             </button>
-          </div>
+          ) : (
+            <button type="button" data-testid={tid("continue")} onClick={() => validateStep(step) && setStep(step + 1)} className="flex-1 rounded-md bg-[#071D3A] px-6 py-3.5 font-semibold text-white hover:bg-[#0c2a52] transition-colors font-['Manrope'] inline-flex items-center justify-center gap-2">
+              {ft.continue_label || "Continuer"} <ArrowRight className="h-4 w-4" />
+            </button>
+          )}
         </div>
-      )}
+      </div>
       <p className="mt-4 text-center text-xs text-[#071D3A]/45 font-['Manrope']">Demande gratuite et sans engagement.</p>
     </div>
   );
@@ -292,12 +336,19 @@ function EligibilityForm({ idPrefix = "defense" }) {
 
 export default function DefenseLanding() {
   const [openFaq, setOpenFaq] = useState(0);
+  const [form, setForm] = useState(null);
+  const [content, setContent] = useState(null);
   const [cookieOk, setCookieOk] = useState(() => { try { return localStorage.getItem("defense_cookie") === "1"; } catch { return false; } });
 
   const campaign = useMemo(() => {
     let c = (new URLSearchParams(window.location.search).get("campaign") || "").trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 64);
     try { if (c) localStorage.setItem("defense_campaign", c); else c = localStorage.getItem("defense_campaign") || ""; } catch {}
     return c;
+  }, []);
+
+  useEffect(() => {
+    API.get("/defense/form/published").then((r) => setForm(r.data)).catch(() => {});
+    API.get("/defense/content").then((r) => setContent(r.data)).catch(() => {});
   }, []);
 
   useEffect(() => {
@@ -308,6 +359,8 @@ export default function DefenseLanding() {
       if (ids.length) loadPixels(ids).then(() => ids.forEach((id) => trackSingle(id, "PageView"))).catch(() => {});
     }).catch(() => {});
   }, [campaign]);
+
+  const rateNum = (content?.offer?.rate || "7,10 %").replace("%", "").trim();
 
   const scrollToForm = () => document.getElementById("eligibilite")?.scrollIntoView({ behavior: "smooth" });
 
@@ -373,7 +426,7 @@ export default function DefenseLanding() {
                 <div className="pl-3">
                   <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/55 font-['Manrope']">Taux net annuel annoncé</p>
                   <p className="mt-1 flex items-baseline gap-1 font-['Bricolage_Grotesque'] font-extrabold leading-none tracking-tight">
-                    <span className="text-[3.6rem]">7,10</span>
+                    <span className="text-[3.6rem]">{rateNum}</span>
                     <span className="text-4xl text-[#EF4135]">%</span>
                     <span className="ml-1 text-sm font-semibold uppercase tracking-wide text-white/60">net / an</span>
                   </p>
@@ -386,7 +439,7 @@ export default function DefenseLanding() {
               </div>
               <div className="p-6 md:p-7">
                 <p className="mb-4 font-['Bricolage_Grotesque'] text-lg font-bold text-[#071D3A]">Vérifiez votre éligibilité en 1 minute</p>
-                <EligibilityForm idPrefix="hero" />
+                <EligibilityForm idPrefix="hero" form={form} content={content} />
               </div>
             </div>
           </motion.div>
@@ -492,7 +545,7 @@ export default function DefenseLanding() {
           </ul>
         </motion.div>
         <motion.div {...fade} transition={{ duration: 0.6, delay: 0.1 }} className="rounded-2xl border border-[#163A63]/10 bg-white p-6 md:p-8 shadow-xl">
-          <EligibilityForm idPrefix="bottom" />
+          <EligibilityForm idPrefix="bottom" form={form} content={content} />
         </motion.div>
       </section>
 

@@ -6,30 +6,31 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { API } from "@/api";
+import { isDefenseHost, DEFENSE_ADMIN_BASE } from "@/defenseBase";
 
 const MENU = [
-  { to: "/admin", label: "Tableau de bord", icon: LayoutDashboard, end: true, testid: "nav-dashboard" },
-  { to: "/admin/statistiques", label: "Statistiques", icon: BarChart3, testid: "nav-statistiques" },
-  { to: "/admin/leads/nouveaux", label: "Nouveaux leads", icon: UserPlus, testid: "nav-nouveaux" },
-  { to: "/admin/leads", label: "Tous les leads", icon: Users, testid: "nav-tous", end: true },
-  { to: "/admin/leads/recuperes", label: "Leads récupérés", icon: Download, testid: "nav-recuperes" },
-  { to: "/admin/leads/traites", label: "Leads traités", icon: CheckCircle2, testid: "nav-traites" },
-  { to: "/admin/leads/doublons", label: "Doublons", icon: Copy, testid: "nav-doublons" },
-  { to: "/admin/leads/incomplets", label: "Leads incomplets", icon: UserX, testid: "nav-incomplets" },
-  { to: "/admin/formulaire", label: "Gestion du formulaire", icon: FileEdit, testid: "nav-formulaire" },
-  { to: "/admin/contenu", label: "Éditeur de landing page", icon: Palette, testid: "nav-contenu" },
-  { to: "/admin/exports", label: "Historique des exports", icon: History, testid: "nav-exports" },
-  { to: "/admin/campagnes", label: "Campagnes Meta", icon: Megaphone, testid: "nav-campagnes" },
-  { to: "/admin/parametres", label: "Paramètres", icon: Settings, testid: "nav-parametres" },
+  { path: "", label: "Tableau de bord", icon: LayoutDashboard, end: true, testid: "nav-dashboard" },
+  { path: "/statistiques", label: "Statistiques", icon: BarChart3, testid: "nav-statistiques" },
+  { path: "/leads/nouveaux", label: "Nouveaux leads", icon: UserPlus, testid: "nav-nouveaux" },
+  { path: "/leads", label: "Tous les leads", icon: Users, testid: "nav-tous", end: true },
+  { path: "/leads/recuperes", label: "Leads récupérés", icon: Download, testid: "nav-recuperes" },
+  { path: "/leads/traites", label: "Leads traités", icon: CheckCircle2, testid: "nav-traites" },
+  { path: "/leads/doublons", label: "Doublons", icon: Copy, testid: "nav-doublons" },
+  { path: "/leads/incomplets", label: "Leads incomplets", icon: UserX, testid: "nav-incomplets" },
+  { path: "/formulaire", label: "Gestion du formulaire", icon: FileEdit, testid: "nav-formulaire" },
+  { path: "/contenu", label: "Éditeur de landing page", icon: Palette, testid: "nav-contenu" },
+  { path: "/exports", label: "Historique des exports", icon: History, testid: "nav-exports" },
+  { path: "/campagnes", label: "Campagnes Meta", icon: Megaphone, testid: "nav-campagnes" },
+  { path: "/parametres", label: "Paramètres", icon: Settings, testid: "nav-parametres" },
 ];
 
-function NavItems({ onNavigate }) {
+function NavItems({ onNavigate, adminBase }) {
   return (
     <nav className="flex flex-col gap-1">
       {MENU.map((item) => (
         <NavLink
-          key={item.to}
-          to={item.to}
+          key={item.path}
+          to={adminBase + item.path}
           end={item.end}
           data-testid={item.testid}
           onClick={onNavigate}
@@ -53,18 +54,22 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
+  const inDefense = isDefenseHost || (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
+  const adminBase = inDefense ? DEFENSE_ADMIN_BASE : "/admin";
+  const brandName = inDefense ? "Défense" : "Claude";
+
   useEffect(() => {
     API.get("/auth/me")
       .then((res) => setAdmin(res.data))
-      .catch(() => navigate("/admin/login", { replace: true }))
+      .catch(() => navigate(`${adminBase}/login`, { replace: true }))
       .finally(() => setChecked(true));
-  }, [navigate]);
+  }, [navigate, adminBase]);
 
   const logout = async () => {
     try {
       await API.post("/auth/logout");
     } catch {}
-    navigate("/admin/login", { replace: true });
+    navigate(`${adminBase}/login`, { replace: true });
   };
 
   if (!checked || !admin) {
@@ -77,7 +82,7 @@ export default function AdminLayout() {
 
   const Brand = (
     <div className="flex items-center gap-1 px-4 py-5">
-      <span className="font-display text-2xl font-bold text-[#F8F6F2]">Claude</span>
+      <span className="font-display text-2xl font-bold text-[#F8F6F2]">{brandName}</span>
       <span className="text-[#FF683D] font-display text-2xl font-bold">.</span>
       <Asterisk className="h-6 w-6 text-[#FF683D]" strokeWidth={2.5} />
     </div>
@@ -89,7 +94,7 @@ export default function AdminLayout() {
       <aside className="hidden lg:flex w-64 shrink-0 flex-col bg-[#101722] min-h-screen sticky top-0 h-screen">
         {Brand}
         <div className="flex-1 overflow-y-auto px-3 pb-4">
-          <NavItems />
+          <NavItems adminBase={adminBase} />
         </div>
         <div className="border-t border-white/10 p-3">
           <p className="px-4 py-1.5 text-xs text-[#F8F6F2]/45 truncate" data-testid="admin-email-display">{admin.email}</p>
@@ -108,7 +113,7 @@ export default function AdminLayout() {
       <div className="flex-1 min-w-0">
         <header className="lg:hidden sticky top-0 z-30 flex items-center justify-between bg-[#101722] px-4 py-3">
           <div className="flex items-center gap-1">
-            <span className="font-display text-xl font-bold text-[#F8F6F2]">Claude</span>
+            <span className="font-display text-xl font-bold text-[#F8F6F2]">{brandName}</span>
             <span className="text-[#FF683D] font-display text-xl font-bold">.</span>
             <Asterisk className="h-5 w-5 text-[#FF683D]" strokeWidth={2.5} />
           </div>
@@ -120,7 +125,7 @@ export default function AdminLayout() {
             </SheetTrigger>
             <SheetContent side="left" className="w-72 bg-[#101722] border-white/10 p-3">
               {Brand}
-              <NavItems onNavigate={() => setMenuOpen(false)} />
+              <NavItems adminBase={adminBase} onNavigate={() => setMenuOpen(false)} />
               <button
                 type="button"
                 data-testid="admin-logout-btn-mobile"

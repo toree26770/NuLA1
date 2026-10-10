@@ -15,9 +15,11 @@ from auth import router as auth_router, seed_admin
 from public_routes import router as public_router
 from admin_routes import router as admin_router
 from form_routes import router as form_router
-from defense_routes import router as defense_router
+from defense_public_routes import router as defense_public_router
 from defense_auth import router as defense_auth_router, seed_defense_admin
 from defense_admin_routes import router as defense_admin_router
+from defense_form_routes import router as defense_form_router
+from defense_seed import seed_defense_content, seed_defense_form
 from seed_data import seed_content, seed_form, seed_pixels
 
 app = FastAPI(title="Claude Offre — API")
@@ -27,9 +29,10 @@ api_router.include_router(auth_router)
 api_router.include_router(public_router)
 api_router.include_router(admin_router)
 api_router.include_router(form_router)
-api_router.include_router(defense_router)
+api_router.include_router(defense_public_router)
 api_router.include_router(defense_auth_router)
 api_router.include_router(defense_admin_router)
+api_router.include_router(defense_form_router)
 
 
 @api_router.get("/")
@@ -56,6 +59,8 @@ async def startup():
     await ensure_indexes()
     await seed_admin()
     await seed_defense_admin()
+    await seed_defense_content()
+    await seed_defense_form()
     await seed_content()
     await seed_form()
     await seed_pixels()

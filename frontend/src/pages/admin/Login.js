@@ -2,6 +2,7 @@ import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Asterisk, Lock } from "lucide-react";
 import { API, fmtError } from "@/api";
+import { isDefenseHost, DEFENSE_ADMIN_BASE } from "@/defenseBase";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -9,6 +10,8 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const inDefense = isDefenseHost || (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
+  const adminBase = inDefense ? DEFENSE_ADMIN_BASE : "/admin";
 
   const submit = async (e) => {
     e.preventDefault();
@@ -17,7 +20,7 @@ export default function AdminLogin() {
     setError("");
     try {
       await API.post("/auth/login", { email, password });
-      navigate("/admin", { replace: true });
+      navigate(adminBase, { replace: true });
     } catch (err) {
       setError(fmtError(err));
     } finally {

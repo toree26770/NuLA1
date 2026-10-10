@@ -6,6 +6,7 @@ import {
 } from "recharts";
 import { Users, CalendarDays, TrendingUp, UserPlus, Download, CheckCircle2, Copy } from "lucide-react";
 import { API } from "@/api";
+import { isDefenseHost, DEFENSE_ADMIN_BASE } from "@/defenseBase";
 
 const PIE_COLORS = { nouveau: "#FF683D", recupere: "#3B82F6", traite: "#10B981", doublon: "#F59E0B", invalide: "#EF4444" };
 const STATUS_FR = { nouveau: "Nouveaux", recupere: "Récupérés", traite: "Traités", doublon: "Doublons", invalide: "Invalides" };
@@ -26,6 +27,8 @@ function StatCard({ label, value, icon: Icon, testid, accent = false }) {
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
+  const inDefense = isDefenseHost || (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
+  const adminBase = inDefense ? DEFENSE_ADMIN_BASE : "/admin";
 
   useEffect(() => {
     API.get("/admin/stats").then((r) => setStats(r.data)).catch(() => {});
@@ -42,7 +45,7 @@ export default function Dashboard() {
     <div className="space-y-6" data-testid="dashboard">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0B111B]">Tableau de bord</h1>
-        <Link to="/admin/leads/nouveaux" data-testid="dashboard-export-link" className="btn-primary-orange !py-2.5 !px-5 !text-sm">
+        <Link to={`${adminBase}/leads/nouveaux`} data-testid="dashboard-export-link" className="btn-primary-orange !py-2.5 !px-5 !text-sm">
           <Download className="h-4 w-4" /> Exporter les nouveaux leads
         </Link>
       </div>

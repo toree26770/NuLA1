@@ -1,8 +1,26 @@
 import axios from "axios";
+import { isDefenseHost } from "@/defenseBase";
 
 export const API = axios.create({
   baseURL: `${process.env.REACT_APP_BACKEND_URL}/api`,
   withCredentials: true,
+});
+
+// Route automatiquement les appels admin/auth vers l'espace Défense (/defense/...)
+// lorsque l'on se trouve sur le sous-domaine Défense ou sous /defense.
+API.interceptors.request.use((config) => {
+  try {
+    const url = config.url || "";
+    const inDefense =
+      isDefenseHost ||
+      (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
+    if (inDefense && (url.startsWith("/admin") || url.startsWith("/auth"))) {
+      config.url = "/defense" + url;
+    }
+  } catch {
+    /* no-op */
+  }
+  return config;
 });
 
 export function getSessionId() {
