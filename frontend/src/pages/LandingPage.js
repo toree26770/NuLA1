@@ -54,16 +54,17 @@ function useCampaign() {
   }, []);
 }
 
-// Résolution des Pixels Meta (côté serveur) + consentement RGPD + événements PageView/Lead.
+// Résolution des Pixels Meta (côté serveur). Le Pixel se charge toujours ;
+// la bannière cookies en bas est purement informative (RGPD) et se ferme sur « Accepter ».
 function useMetaPixel(campaign) {
-  const [consent, setConsent] = useState(() => {
+  const [pixels, setPixels] = useState([]);
+  const [noticeDismissed, setNoticeDismissed] = useState(() => {
     try {
-      return localStorage.getItem("claude_ad_consent");
+      return localStorage.getItem("claude_cookie_notice") === "1";
     } catch {
-      return null;
+      return false;
     }
   });
-  const [pixels, setPixels] = useState([]);
   const pageViewFired = useRef(false);
   const leadFired = useRef(false);
 
@@ -73,8 +74,9 @@ function useMetaPixel(campaign) {
       .catch(() => {});
   }, [campaign]);
 
+  // Le Pixel se charge dès que disponible ; PageView envoyé une seule fois.
   useEffect(() => {
-    if (consent !== "granted" || !pixels.length) return;
+    if (!pixels.length) return;
     const ids = pixels.map((p) => p.pixel_id);
     loadPixels(ids)
       .then(() => {
@@ -90,28 +92,20 @@ function useMetaPixel(campaign) {
         }
       })
       .catch(() => {});
-  }, [consent, pixels, campaign]);
+  }, [pixels, campaign]);
 
-  const accept = () => {
+  const dismissNotice = () => {
     try {
-      localStorage.setItem("claude_ad_consent", "granted");
+      localStorage.setItem("claude_cookie_notice", "1");
     } catch {
       /* ignore */
     }
-    setConsent("granted");
-  };
-  const reject = () => {
-    try {
-      localStorage.setItem("claude_ad_consent", "denied");
-    } catch {
-      /* ignore */
-    }
-    setConsent("denied");
+    setNoticeDismissed(true);
   };
 
   // Lead : déclenché UNE seule fois, après enregistrement réussi en base.
   const fireLead = () => {
-    if (consent !== "granted" || leadFired.current) return;
+    if (leadFired.current) return;
     const ids = pixels.map((p) => p.pixel_id);
     if (!ids.length) return;
     loadPixels(ids)
@@ -124,7 +118,7 @@ function useMetaPixel(campaign) {
   };
 
   const pixelIds = pixels.map((p) => p.pixel_id);
-  return { consent, pixels, pixelIds, accept, reject, fireLead };
+  return { pixels, pixelIds, noticeDismissed, dismissNotice, fireLead };
 }
 
 const fadeUp = {
@@ -490,8 +484,8 @@ export default function LandingPage() {
         </DialogContent>
       </Dialog>
 
-      {metaPixel.consent == null && metaPixel.pixels.length > 0 && (
-        <ConsentBanner onAccept={metaPixel.accept} onReject={metaPixel.reject} />
+      {!metaPixel.noticeDismissed && (
+        <ConsentBanner onAccept={metaPixel.dismissNotice} />
       )}
     </div>
   );

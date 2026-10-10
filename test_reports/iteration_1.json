@@ -1,0 +1,33 @@
+{
+  "summary": "Full backend + frontend validation of Meta Pixels manager, lead deletion (single/bulk), French overseas phone validation, landing visuals, consent-gated Meta Pixel integration and existing regressions. 25/25 pytest backend tests pass. Admin UI (Meta Pixels CRUD + lead delete + bulk delete selection) works. Landing shows LIVRET D'ÉPARGNE heading + eligibility badge. fbq is undefined before consent; after consent, fbevents.js loads and window.__metaPixelEvents records PageView then Lead (pixel_id=1905482920834524) after submitting the 2-step form with a Guadeloupe phone (0690445566).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": [
+      {"screen": "Admin dialogs", "issues": ["React a11y warning: Missing Description/aria-describedby on DialogContent (Radix Dialog). Non-blocking but should be fixed by adding DialogDescription."]}
+    ]
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: add <DialogDescription> inside pixel-dialog, pixel-delete-dialog and lead-delete-dialog to clear Radix a11y warning."
+  ],
+  "critical_code_review_comments": [
+    "admin_routes.update_pixel allows empty body (no-op returns ok:true even if pixel doesn't exist) — minor UX only.",
+    "public_routes submit_lead silently returns ok:true on honeypot/fast_submit without flagging, which is intentional (anti-bot) and correct.",
+    "/api/pixels/active correctly refuses to fall back to default pixel when an unknown campaign is passed."
+  ],
+  "updated_files": [
+    "/app/backend/tests/backend_test.py (created)"
+  ],
+  "success_rate": {"backend": "100% (25/25)", "frontend": "100% (critical flows)"},
+  "test_credentials": "admin@claude-offre.fr / Claude2026!Admin",
+  "seed_data_creation": "Tests create and clean up TEST_ pixels. Several Guadeloupe/Martinique/Guyane/Reunion/Mayotte/metropole leads were created via POST /api/leads during phone validation tests (not deleted — flagged as 'doublon' on duplicate submissions). One lead was deleted via the admin UI during the delete flow.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend rate limit is 8/hour per IP in default settings; the pytest session temporarily raises rate_limit_per_hour=1000 and min_submit_seconds=0 via /api/admin/settings and restores at teardown. Email validator requires deliverable domain (DNS MX), so tests use gmail.com addresses. The published form has exactly 2 steps: step1 (birth_date/last_name/first_name/email/phone), step2 (amount cards only — no 'ville' field in current published form). window.__metaPixelEvents is a diagnostic journal exposed by src/metaPixel.js — PageView fires on consent accept, Lead fires on successful submit.",
+  "rca of the issue": "N/A — no bugs found."
+}

@@ -4,7 +4,7 @@ import { ArrowLeft, ArrowRight, Check, CheckCircle2 } from "lucide-react";
 import { API, fmtError, trackEvent, getSessionId } from "@/api";
 
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/;
-const PHONE_RE = /^(?:(?:\+|00)33[\s.-]?|0)[1-9](?:[\s.-]?\d{2}){4}$/;
+const PHONE_RE = /^(?:\+?\d{8,15}|0\d{9})$/;
 
 function validateField(q, value) {
   if (q.field_type === "checkbox") {
@@ -21,7 +21,7 @@ function validateField(q, value) {
     case "email":
       return EMAIL_RE.test(v) ? null : "Le format de l'adresse e-mail est invalide";
     case "phone":
-      return PHONE_RE.test(v) ? null : "Numéro de téléphone français invalide";
+      return PHONE_RE.test(v.replace(/[\s.\-]/g, "")) ? null : "Numéro de téléphone invalide";
     case "date": {
       if (q.validation_rules?.min_age) {
         const d = new Date(v);
@@ -44,6 +44,70 @@ function validateField(q, value) {
   }
 }
 
+const FR_PREFIXES = [
+  { code: "+33", label: "🇫🇷 France (+33)" },
+  { code: "+590", label: "🇬🇵 Guadeloupe (+590)" },
+  { code: "+596", label: "🇲🇶 Martinique (+596)" },
+  { code: "+594", label: "🇬🇫 Guyane (+594)" },
+  { code: "+262", label: "🇷🇪 Réunion (+262)" },
+  { code: "+262", label: "🇾🇹 Mayotte (+262)" },
+  { code: "+508", label: "🇵🇲 Saint-Pierre-et-Miquelon (+508)" },
+  { code: "+590", label: "🇧🇱 Saint-Barthélemy (+590)" },
+  { code: "+590", label: "🇲🇫 Saint-Martin (+590)" },
+  { code: "+687", label: "🇳🇨 Nouvelle-Calédonie (+687)" },
+  { code: "+689", label: "🇵🇫 Polynésie française (+689)" },
+  { code: "+681", label: "🇼🇫 Wallis-et-Futuna (+681)" },
+];
+
+function composePhone(prefix, local) {
+  const digits = (local || "").replace(/[^\d]/g, "").replace(/^0+/, "");
+  return digits ? `${prefix}${digits}` : "";
+}
+
+function PhoneField({ common, inputCls, value, onChange, placeholder }) {
+  const initial = useMemo(() => {
+    const val = (value || "").trim();
+    const idx = FR_PREFIXES.findIndex((p) => val.startsWith(p.code));
+    if (idx >= 0) return { prefixIdx: idx, local: val.slice(FR_PREFIXES[idx].code.length) };
+    return { prefixIdx: 0, local: "" };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+  const [prefixIdx, setPrefixIdx] = useState(initial.prefixIdx);
+  const [local, setLocal] = useState(initial.local);
+
+  const update = (idx, loc) => {
+    setPrefixIdx(idx);
+    setLocal(loc);
+    onChange(composePhone(FR_PREFIXES[idx].code, loc));
+  };
+
+  return (
+    <div className="flex items-stretch gap-2">
+      <select
+        data-testid="field-phone-prefix"
+        aria-label="Indicatif"
+        value={prefixIdx}
+        onChange={(e) => update(Number(e.target.value), local)}
+        className="form-input-premium !w-auto !px-2 shrink-0 max-w-[9.5rem] text-sm cursor-pointer"
+      >
+        {FR_PREFIXES.map((p, i) => (
+          <option key={i} value={i}>{p.label}</option>
+        ))}
+      </select>
+      <input
+        {...common}
+        type="tel"
+        inputMode="tel"
+        className={inputCls}
+        placeholder={placeholder || "6 12 34 56 78"}
+        value={local}
+        onChange={(e) => update(prefixIdx, e.target.value)}
+        autoComplete="tel"
+      />
+    </div>
+  );
+}
+
 function Field({ q, value, error, onChange, consentText }) {
   const common = {
     id: `field-${q.question_key}`,
@@ -60,14 +124,7 @@ function Field({ q, value, error, onChange, consentText }) {
       control = <input {...common} type="email" className={inputCls} placeholder={q.placeholder} value={value || ""} onChange={(e) => onChange(e.target.value)} autoComplete="email" />;
       break;
     case "phone":
-      control = (
-        <div className="flex items-stretch">
-          <span className="flex items-center gap-1.5 px-3 rounded-l-lg border border-r-0 border-gray-200 bg-gray-50 text-sm text-gray-600">
-            <span aria-hidden>🇫🇷</span> +33
-          </span>
-          <input {...common} type="tel" className={`${inputCls} rounded-l-none`} placeholder={q.placeholder || "06 12 34 56 78"} value={value || ""} onChange={(e) => onChange(e.target.value)} autoComplete="tel" />
-        </div>
-      );
+      control = <PhoneField common={common} inputCls={inputCls} value={value} onChange={onChange} placeholder={q.placeholder} />;
       break;
     case "date":
       control = <input {...common} type="date" className={inputCls} value={value || ""} onChange={(e) => onChange(e.target.value)} max={new Date().toISOString().slice(0, 10)} />;
