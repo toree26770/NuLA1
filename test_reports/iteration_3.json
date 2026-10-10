@@ -1,0 +1,29 @@
+{
+  "summary": "End-to-end test of the Défense landing (/defense). Backend: 7/7 pytest cases pass (pixels, lead success, missing consent 400, invalid phone 422, invalid email 422, duplicate detection, honeypot). Frontend Playwright: both HERO and BOTTOM eligibility forms work independently - step1 validation (invalid phone blocks step2), step2 consent required blocks submission, successful submission shows confirmation panel. Hero form card is visible without scroll and displays the 7,10% rate prominently next to the form.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_defense.py",
+    "/app/test_reports/pytest/defense_results.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "defense_routes.py: On submission error (422/400) frontend sets step back to 0 only when detail is object - but validation errors from step 2 (consent 400 returns object with 'consent') would navigate user back to step 0 even though the consent error is only reachable on step 2. Minor UX; current flow still works since frontend validates consent client-side first.",
+    "DefenseLanding.js honeypot input uses absolute positioning but is inside a relative container only via parent flow; works but could still be focusable by keyboard users without aria-hidden true on parent (minor a11y).",
+    "Email validation on frontend regex is permissive while backend rejects undeliverable domains (e.g. exemple.fr). Consider surfacing clearer client-side hint or using a more permissive backend check for the demo."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_defense.py"
+  ],
+  "success_rate": {"backend": "100%", "frontend": "100%"},
+  "test_credentials": "N/A - public endpoints, no auth",
+  "seed_data_creation": "Created real defense_leads documents via POST /api/defense/leads during tests (TEST_/gmail.com addresses). Cleanup not performed; collection is isolated (defense_leads).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend tests live in /app/backend/tests/test_defense.py. The validators module rejects email domains that cannot receive mail (so 'exemple.fr' => 422). Use gmail.com or similar real MX domain in payloads. Both hero- and bottom- form instances share the same EligibilityForm with idPrefix prop, data-testids: {prefix}-first-name/last-name/phone/email/continue/situation/consent/submit/confirmation.",
+  "rca of the issue": "No bug reproduced. All targeted features behave as specified."
+}

@@ -9,6 +9,7 @@ import { loadPixels, trackSingle } from "@/metaPixel";
 
 const NAVY = "#071D3A";
 const fade = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6, ease: "easeOut" } };
+const heroFade = { initial: { opacity: 0, y: 24 }, animate: { opacity: 1, y: 0 }, transition: { duration: 0.6, ease: "easeOut" } };
 
 const FEATURES = [
   { icon: TrendingUp, title: "7,10 % net annuel", text: "Un rendement annoncé, présenté avec ses conditions d'application selon les documents contractuels." },
@@ -43,9 +44,9 @@ const FAQ = [
 function Tricolore({ className = "" }) {
   return (
     <div className={`flex h-full w-full ${className}`} aria-hidden>
-      <span className="flex-1 bg-[#071D3A]" />
+      <span className="flex-1 bg-[#0055A4]" />
       <span className="flex-1 bg-white" />
-      <span className="flex-1 bg-[#C8102E]" />
+      <span className="flex-1 bg-[#EF4135]" />
     </div>
   );
 }
@@ -194,7 +195,7 @@ function EligibilityForm({ idPrefix = "defense" }) {
           </div>
           <label className="flex items-start gap-3 cursor-pointer rounded-md border border-[#163A63]/15 bg-[#F5F6F8] p-3.5">
             <input type="checkbox" data-testid={tid("consent")} checked={data.consent} onChange={(e) => set("consent", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#C8102E]" />
-            <span className="text-sm text-[#071D3A]/75 font-['Manrope']">J'accepte la politique de confidentialité et d'être recontacté par un conseiller afin de recevoir des informations sur le Livret Défense.</span>
+            <span className="text-sm text-[#071D3A]/75 font-['Manrope']">J'accepte d'être recontacté(e) et la <span className="underline decoration-[#163A63]/30">politique de confidentialité</span>.</span>
           </label>
           {errors.consent && <p className="text-xs text-[#C8102E]">{errors.consent}</p>}
           <div className="flex gap-3">
@@ -232,7 +233,7 @@ export default function DefenseLanding() {
 
   return (
     <div className="min-h-screen bg-white font-['Manrope'] text-[#071D3A]" data-testid="defense-landing">
-      <div className="h-1 w-full"><Tricolore /></div>
+      <div className="h-2 w-full"><Tricolore /></div>
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-[#163A63]/10 bg-white/90 backdrop-blur">
@@ -250,7 +251,7 @@ export default function DefenseLanding() {
       {/* Hero */}
       <section className="relative overflow-hidden bg-gradient-to-b from-[#F5F6F8] via-white to-white border-b border-[#163A63]/10">
         <div className="mx-auto max-w-6xl grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center px-5 py-10 lg:py-14">
-          <motion.div {...fade}>
+          <motion.div {...heroFade}>
             <span className="inline-flex items-center gap-2 rounded-full border border-[#163A63]/20 bg-white px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[#163A63] uppercase">
               <span className="h-3 w-5 overflow-hidden rounded-[2px]"><Tricolore /></span> Épargne patrimoniale française
             </span>
@@ -270,12 +271,21 @@ export default function DefenseLanding() {
             </ul>
           </motion.div>
 
-          <motion.div {...fade} transition={{ duration: 0.7, delay: 0.1 }} className="relative">
+          <motion.div {...heroFade} transition={{ duration: 0.7, delay: 0.1 }} className="relative">
             <div className="rounded-2xl bg-white border border-[#163A63]/10 shadow-2xl overflow-hidden" data-testid="hero-form-card">
-              <div className="flex items-stretch justify-between gap-4 bg-[#071D3A] px-6 py-5 text-white">
-                <div>
-                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55 font-['Manrope']">Taux net annuel annoncé</p>
-                  <p className="mt-1 font-['Bricolage_Grotesque'] text-5xl font-extrabold leading-none tracking-tight">7,10<span className="ml-0.5 text-[#C8102E]">%</span></p>
+              <div className="relative flex items-stretch justify-between gap-4 overflow-hidden bg-[#071D3A] px-7 py-6 text-white">
+                <span className="absolute left-0 top-0 flex h-full w-[6px] flex-col" aria-hidden>
+                  <span className="flex-1 bg-[#0055A4]" />
+                  <span className="flex-1 bg-white" />
+                  <span className="flex-1 bg-[#EF4135]" />
+                </span>
+                <div className="pl-3">
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-white/55 font-['Manrope']">Taux net annuel annoncé</p>
+                  <p className="mt-1 flex items-baseline gap-1 font-['Bricolage_Grotesque'] font-extrabold leading-none tracking-tight">
+                    <span className="text-[3.6rem]">7,10</span>
+                    <span className="text-4xl text-[#EF4135]">%</span>
+                    <span className="ml-1 text-sm font-semibold uppercase tracking-wide text-white/60">net / an</span>
+                  </p>
                 </div>
                 <div className="flex flex-col justify-center border-l border-white/10 pl-4 text-right text-[11px] leading-snug text-white/65 font-['Manrope']">
                   <span>Capital garanti</span>
@@ -392,7 +402,7 @@ export default function DefenseLanding() {
 
       {/* Footer */}
       <footer className="bg-[#071D3A] text-white/70">
-        <div className="h-1 w-full"><Tricolore /></div>
+        <div className="h-2 w-full"><Tricolore /></div>
         <div className="mx-auto max-w-6xl px-5 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm">
           <div>
             <Logo dark />
