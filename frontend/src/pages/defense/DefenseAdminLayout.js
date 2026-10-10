@@ -6,12 +6,12 @@ import {
 import { API } from "@/api";
 
 const NAV = [
-  { to: "/defense/admin", end: true, icon: LayoutDashboard, label: "Tableau de bord" },
-  { to: "/defense/admin/leads", icon: Users, label: "Prospects" },
-  { to: "/defense/admin/leads/incomplets", icon: UserX, label: "Leads incomplets" },
-  { to: "/defense/admin/exports", icon: Download, label: "Exports" },
-  { to: "/defense/admin/pixels", icon: Target, label: "Meta Pixels" },
-  { to: "/defense/admin/parametres", icon: Settings, label: "Paramètres" },
+  { to: "/defense/admin", end: true, icon: LayoutDashboard, label: "Tableau de bord", id: "dashboard" },
+  { to: "/defense/admin/leads", icon: Users, label: "Prospects", id: "leads" },
+  { to: "/defense/admin/leads/incomplets", icon: UserX, label: "Leads incomplets", id: "partial-leads" },
+  { to: "/defense/admin/exports", icon: Download, label: "Exports", id: "exports" },
+  { to: "/defense/admin/pixels", icon: Target, label: "Meta Pixels", id: "pixels" },
+  { to: "/defense/admin/parametres", icon: Settings, label: "Paramètres", id: "settings" },
 ];
 
 export default function DefenseAdminLayout() {
@@ -53,7 +53,7 @@ export default function DefenseAdminLayout() {
               key={n.to}
               to={n.to}
               end={n.end}
-              data-testid={`defense-nav-${n.label.toLowerCase().replace(/[^a-z]+/g, "-")}`}
+              data-testid={`defense-nav-${n.id}`}
               className={({ isActive }) =>
                 `flex items-center gap-3 rounded-lg px-3 py-2.5 text-sm font-medium transition-colors ${
                   isActive ? "bg-[#C8102E] text-white" : "text-white/70 hover:bg-white/10 hover:text-white"

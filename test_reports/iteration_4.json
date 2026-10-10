@@ -1,0 +1,33 @@
+{
+  "summary": "Complete E2E test of Défense app (landing + isolated admin). Backend: 22/22 pytest cases pass in test_defense_admin.py (auth, isolation Claude<->Défense, stats, analytics, leads CRUD + search/filter + bulk delete, exports new+custom+download, partial leads export CSV, pixels CRUD, settings GET/PUT). Previous test_defense.py (landing public endpoints) still passing (7/7). Frontend Playwright: landing /defense OK — all 4 sector cards (Thales/Safran/Dassault/Airbus) present, HERO form with phone prefix dropdown works, invalid phone blocks step 2, missing consent blocks submit, valid submission shows confirmation. Admin /defense/admin: unauth redirects to login, wrong password rejected, correct login lands on dashboard (14 total prospects, répartition par statut, bloc Audience). Navigation to Prospects, Leads incomplets, Exports, Meta Pixels, Paramètres works. Pixel creation works, settings save shows success toast, logout redirects to login. ISOLATION verified at backend (Claude admin session gets 401 on /defense/admin/*, Défense admin session cannot read Claude leads, lead created via /defense/leads not present in /admin/leads).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/test_defense.py",
+    "/app/backend/tests/test_defense_admin.py",
+    "/app/test_reports/pytest/defense_admin_results.xml"
+  ],
+  "action_items": [
+    "Minor DX: nav data-testids are slugified from French labels (defense-nav-prospects, defense-nav-leads-incomplets, defense-nav-meta-pixels, defense-nav-param-tres, defense-nav-tableau-de-bord) rather than the stable keys described in the brief (defense-nav-leads, defense-nav-partial-leads, defense-nav-pixels, defense-nav-settings). This still works but makes future test automation brittle if labels change; consider deriving testids from a stable key rather than the translated label."
+  ],
+  "critical_code_review_comments": [
+    "defense_admin_routes.py: /defense/admin/analytics returns the raw `days` query parameter inside its JSON payload (`\"days\": days`) — harmless but mixes echo with data; consider renaming to `period_days` for clarity.",
+    "defense_admin_routes.py export_new_leads: concurrent calls can both pass the `pending` check before either insert (race). Low-risk in single-admin usage but worth a unique partial index on {status:'pending', kind:'new'} if usage grows.",
+    "defense_auth.py: login lockout uses `locked_until` set to now+15m even on the FIRST failed attempt, which may lock immediately after count reaches 5 but also keeps the sliding window pinned. Works, but documenting the window behaviour would help.",
+    "DefenseAdminLayout nav slug uses the French label (e.g. 'Paramètres' → 'param-tres') — brittle for i18n; prefer stable keys."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_defense_admin.py"
+  ],
+  "success_rate": {"backend": "100% (22/22 + 7/7)", "frontend": "100%"},
+  "test_credentials": "Défense: admin@livret-defense.fr / Defense2026!Admin ; Claude: admin@claude-offre.fr / Claude2026!Admin (used for isolation checks).",
+  "seed_data_creation": "Created ~10 defense_leads documents (Jean Dupont / gmail addresses) via POST /api/defense/leads, 1 defense_partial_leads doc, 2 defense_export_batches (one new + one custom), transient defense_pixels (created+deleted). All isolated in defense_* collections.",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Backend admin tests in /app/backend/tests/test_defense_admin.py (use pytest -o addopts= to bypass xdist that is misconfigured in the pytest.ini). Validators reject hex/digits inside last_name — always use plain French names like 'Jean Dupont'. BASE_URL must come from REACT_APP_BACKEND_URL. Defense admin nav data-testids are derived from French slugs (prospects, leads-incomplets, meta-pixels, param-tres, tableau-de-bord). All isolation (collections + sessions + auth) confirmed working between /admin (Claude) and /defense/admin (Défense).",
+  "rca of the issue": "No bugs reproduced. The Défense admin is fully functional and properly isolated from the Claude app at the collection, auth-cookie and endpoint levels."
+}
