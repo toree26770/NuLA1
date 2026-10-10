@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+import re
 
 from fastapi import APIRouter, HTTPException, Request
 from pydantic import BaseModel
@@ -21,6 +22,24 @@ async def get_content():
     if not content:
         raise HTTPException(status_code=404, detail="Contenu introuvable")
     return content
+
+
+@router.get("/pixels/active")
+async def active_pixels(campaign: str | None = None):
+    """Retourne les Pixels Meta à déclencher pour ce visiteur (résolution côté serveur)."""
+    camp = re.sub(r"[^a-z0-9_-]", "", (campaign or "").strip().lower())[:64]
+    pixels = await db.meta_pixels.find(
+        {"enabled": True}, {"_id": 0, "pixel_id": 1, "campaigns": 1, "is_default": 1, "name": 1}
+    ).to_list(500)
+    result = []
+    for p in pixels:
+        camps = p.get("campaigns") or []
+        if camp:
+            if camp in camps:
+                result.append(p)
+        elif p.get("is_default"):
+            result.append(p)
+    return {"campaign": camp, "pixels": [{"pixel_id": p["pixel_id"], "name": p.get("name", "")} for p in result]}
 
 
 @router.get("/form/published")
@@ -312,6 +331,8 @@ async def submit_lead(body: LeadSubmit, request: Request):
         "campaign_id": clean_text(meta.get("campaign_id"), 200),
         "adset_id": clean_text(meta.get("adset_id"), 200),
         "ad_id": clean_text(meta.get("ad_id"), 200),
+        "campaign": re.sub(r"[^a-z0-9_-]", "", clean_text(meta.get("campaign"), 64).lower()),
+        "pixel_ids": [clean_text(str(x), 20) for x in (meta.get("pixel_ids") or []) if clean_text(str(x), 20)][:10],
         "ip": ip,
         "retrieved_at": "",
         "export_batch_id": "",

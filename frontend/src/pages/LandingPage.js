@@ -7,9 +7,11 @@ import {
   Dialog, DialogContent, DialogHeader, DialogTitle,
 } from "@/components/ui/dialog";
 import {
-  ArrowRight, Asterisk, ShieldCheck, Coins, RefreshCcw, FileText, Gift, Clock3, CheckCircle2,
+  ArrowRight, ArrowDown, Asterisk, ShieldCheck, Coins, RefreshCcw, FileText, Gift, Clock3, CheckCircle2,
 } from "lucide-react";
 import { API, trackEvent } from "@/api";
+import { loadPixels, trackSingle } from "@/metaPixel";
+import ConsentBanner from "@/components/ConsentBanner";
 import DynamicForm from "@/components/DynamicForm";
 
 const HERO_BG = "https://images.unsplash.com/photo-1531297484001-80022131f5a1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwyfHxsYXB0b3AlMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3OTE1NTAwMDZ8MA&ixlib=rb-4.1.0&q=85";
@@ -37,6 +39,94 @@ function useTrackingParams() {
   }, []);
 }
 
+// Campagne persistée (URL puis localStorage) — fiable pendant toutes les étapes du formulaire.
+function useCampaign() {
+  return useMemo(() => {
+    let camp = (new URLSearchParams(window.location.search).get("campaign") || "")
+      .trim().toLowerCase().replace(/[^a-z0-9_-]/g, "").slice(0, 64);
+    try {
+      if (camp) localStorage.setItem("claude_campaign", camp);
+      else camp = localStorage.getItem("claude_campaign") || "";
+    } catch {
+      /* ignore */
+    }
+    return camp;
+  }, []);
+}
+
+// Résolution des Pixels Meta (côté serveur) + consentement RGPD + événements PageView/Lead.
+function useMetaPixel(campaign) {
+  const [consent, setConsent] = useState(() => {
+    try {
+      return localStorage.getItem("claude_ad_consent");
+    } catch {
+      return null;
+    }
+  });
+  const [pixels, setPixels] = useState([]);
+  const pageViewFired = useRef(false);
+  const leadFired = useRef(false);
+
+  useEffect(() => {
+    API.get(`/pixels/active${campaign ? `?campaign=${encodeURIComponent(campaign)}` : ""}`)
+      .then((r) => setPixels(r.data.pixels || []))
+      .catch(() => {});
+  }, [campaign]);
+
+  useEffect(() => {
+    if (consent !== "granted" || !pixels.length) return;
+    const ids = pixels.map((p) => p.pixel_id);
+    loadPixels(ids)
+      .then(() => {
+        const key = `meta-pv:${campaign}:${window.location.pathname}`;
+        if (!pageViewFired.current && !sessionStorage.getItem(key)) {
+          pageViewFired.current = true;
+          ids.forEach((id) => trackSingle(id, "PageView"));
+          try {
+            sessionStorage.setItem(key, "1");
+          } catch {
+            /* ignore */
+          }
+        }
+      })
+      .catch(() => {});
+  }, [consent, pixels, campaign]);
+
+  const accept = () => {
+    try {
+      localStorage.setItem("claude_ad_consent", "granted");
+    } catch {
+      /* ignore */
+    }
+    setConsent("granted");
+  };
+  const reject = () => {
+    try {
+      localStorage.setItem("claude_ad_consent", "denied");
+    } catch {
+      /* ignore */
+    }
+    setConsent("denied");
+  };
+
+  // Lead : déclenché UNE seule fois, après enregistrement réussi en base.
+  const fireLead = () => {
+    if (consent !== "granted" || leadFired.current) return;
+    const ids = pixels.map((p) => p.pixel_id);
+    if (!ids.length) return;
+    loadPixels(ids)
+      .then(() => {
+        if (leadFired.current) return;
+        leadFired.current = true;
+        ids.forEach((id) => trackSingle(id, "Lead"));
+      })
+      .catch(() => {});
+  };
+
+  const pixelIds = pixels.map((p) => p.pixel_id);
+  return { consent, pixels, pixelIds, accept, reject, fireLead };
+}
+
 const fadeUp = {
   initial: { opacity: 0, y: 24 },
   whileInView: { opacity: 1, y: 0 },
@@ -50,6 +140,12 @@ export default function LandingPage() {
   const [legalDialog, setLegalDialog] = useState("");
   const formRef = useRef(null);
   const tracking = useTrackingParams();
+  const campaign = useCampaign();
+  const metaPixel = useMetaPixel(campaign);
+  const formTracking = useMemo(
+    () => ({ ...tracking, campaign, pixel_ids: metaPixel.pixelIds }),
+    [tracking, campaign, metaPixel.pixelIds]
+  );
 
   useEffect(() => {
     trackEvent("page_view", { meta: tracking });
@@ -118,6 +214,11 @@ export default function LandingPage() {
           <div className="flex flex-col lg:grid lg:grid-cols-12 lg:gap-12">
             {/* Bloc A : titre */}
             <div className="order-1 lg:col-span-7">
+              <motion.div {...fadeUp} className="mb-3" data-testid="livret-heading">
+                <span className="livret-3d block text-4xl md:text-6xl lg:text-7xl uppercase leading-[0.95]">
+                  Livret d'Épargne
+                </span>
+              </motion.div>
               <motion.p {...fadeUp} className="text-xs md:text-sm font-semibold tracking-[0.22em] text-[#FF683D] uppercase mb-5" style={{ color: "var(--brand-orange, #FF683D)" }} data-testid="hero-eyebrow">
                 {hero.eyebrow}
               </motion.p>
@@ -178,17 +279,27 @@ export default function LandingPage() {
             {/* Formulaire — priorité mobile */}
             <div className="order-2 lg:col-span-5 lg:row-span-2 mt-10 lg:mt-0" ref={formRef} id="formulaire">
               <div className="mb-4 lg:text-left" data-testid="pre-form-accroche">
+                <div className="eligibility-badge mb-3 inline-flex items-center gap-2 rounded-full bg-[#FF683D] px-4 py-2 text-xs md:text-sm font-bold text-white shadow-[0_6px_20px_rgba(255,104,61,0.45)]" data-testid="eligibility-badge">
+                  <span className="relative flex h-2.5 w-2.5">
+                    <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-white opacity-75"></span>
+                    <span className="relative inline-flex h-2.5 w-2.5 rounded-full bg-white"></span>
+                  </span>
+                  Vérifiez votre éligibilité — gratuit &amp; sans engagement
+                </div>
                 <p className="font-display text-xl md:text-2xl font-semibold leading-snug">{form_texts.pre_form_title}</p>
                 <p className="mt-1 text-sm text-[#F8F6F2]/65">{form_texts.pre_form_text}</p>
+                <div className="mt-3 flex justify-center lg:hidden">
+                  <ArrowDown className="arrow-bob h-7 w-7 text-[#FF683D]" strokeWidth={2.5} />
+                </div>
               </div>
               <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
                 transition={{ duration: 0.5, delay: 0.15 }}
-                className="bg-[#F8F6F2] rounded-2xl shadow-2xl p-6 md:p-8 text-[#0B111B] border border-white/20"
+                className="form-glow bg-[#F8F6F2] rounded-2xl shadow-2xl p-6 md:p-8 text-[#0B111B] border-2 border-[#FF683D]/40"
                 data-testid="form-card"
               >
-                <DynamicForm form={form} texts={form_texts} tracking={tracking} />
+                <DynamicForm form={form} texts={form_texts} tracking={formTracking} onConversion={metaPixel.fireLead} />
               </motion.div>
               <div className="mt-6 lg:hidden">
                 <p className="text-center text-sm text-[#F8F6F2]/60">{hero.cta_note}</p>
@@ -378,6 +489,10 @@ export default function LandingPage() {
           </p>
         </DialogContent>
       </Dialog>
+
+      {metaPixel.consent == null && metaPixel.pixels.length > 0 && (
+        <ConsentBanner onAccept={metaPixel.accept} onReject={metaPixel.reject} />
+      )}
     </div>
   );
 }

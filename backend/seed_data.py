@@ -139,6 +139,22 @@ async def seed_content():
         await db.site_content.insert_one(dict(DEFAULT_CONTENT))
 
 
+async def seed_pixels():
+    existing = await db.meta_pixels.find_one({"pixel_id": "1905482920834524"})
+    if existing:
+        return
+    await db.meta_pixels.insert_one({
+        "id": new_id(),
+        "name": "Meta Pixel 1",
+        "pixel_id": "1905482920834524",
+        "enabled": True,
+        "is_default": True,
+        "campaigns": [],
+        "test_event_code": "",
+        "created_at": now_iso(),
+    })
+
+
 async def seed_form():
     published = await db.form_versions.find_one({"status": "published"})
     if published:

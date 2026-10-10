@@ -1,4 +1,5 @@
 from datetime import datetime, timezone, timedelta
+import re
 
 from fastapi import APIRouter, Depends, HTTPException, Query, Response
 from pydantic import BaseModel
@@ -217,6 +218,29 @@ async def update_lead_status(lead_id: str, body: StatusUpdate):
     return {"ok": True}
 
 
+@router.delete("/leads/{lead_id}")
+async def delete_lead(lead_id: str):
+    res = await db.leads.delete_one({"id": lead_id})
+    if res.deleted_count == 0:
+        raise HTTPException(status_code=404, detail="Lead introuvable")
+    await db.lead_answers.delete_many({"lead_id": lead_id})
+    return {"ok": True}
+
+
+class BulkDelete(BaseModel):
+    lead_ids: list[str] = []
+
+
+@router.post("/leads/bulk-delete")
+async def bulk_delete_leads(body: BulkDelete):
+    ids = [str(x) for x in (body.lead_ids or [])][:1000]
+    if not ids:
+        return {"ok": True, "deleted": 0}
+    res = await db.leads.delete_many({"id": {"$in": ids}})
+    await db.lead_answers.delete_many({"lead_id": {"$in": ids}})
+    return {"ok": True, "deleted": res.deleted_count}
+
+
 @router.get("/campaigns")
 async def get_campaigns():
     rows = await db.leads.aggregate([
@@ -291,6 +315,77 @@ async def admin_put_settings(body: dict):
     if "consent_version" in body:
         allowed["consent_version"] = str(body["consent_version"])[:50]
     await db.settings.update_one({"key": "settings"}, {"$set": allowed}, upsert=True)
+    return {"ok": True}
+
+
+# ---------- Meta Pixels ----------
+
+PIXEL_ID_RE = re.compile(r"^\d{8,20}$")
+
+
+def _clean_campaigns(raw):
+    out = []
+    if isinstance(raw, list):
+        for c in raw:
+            s = re.sub(r"[^a-z0-9_-]", "", str(c).strip().lower())[:64]
+            if s and s not in out:
+                out.append(s)
+    return out
+
+
+@router.get("/pixels")
+async def list_pixels():
+    items = await db.meta_pixels.find({}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    return {"items": items}
+
+
+@router.post("/pixels")
+async def create_pixel(body: dict):
+    pixel_id = str(body.get("pixel_id", "")).strip()
+    if not PIXEL_ID_RE.match(pixel_id):
+        raise HTTPException(status_code=400, detail="Identifiant de Pixel invalide : uniquement des chiffres (8 à 20).")
+    doc = {
+        "id": new_id(),
+        "name": (str(body.get("name", "")).strip()[:120]) or f"Pixel {pixel_id[-4:]}",
+        "pixel_id": pixel_id,
+        "enabled": bool(body.get("enabled", True)),
+        "is_default": bool(body.get("is_default", False)),
+        "campaigns": _clean_campaigns(body.get("campaigns")),
+        "test_event_code": str(body.get("test_event_code", "")).strip()[:50],
+        "created_at": now_iso(),
+    }
+    await db.meta_pixels.insert_one(dict(doc))
+    return {"ok": True, "pixel": doc}
+
+
+@router.put("/pixels/{pixel_doc_id}")
+async def update_pixel(pixel_doc_id: str, body: dict):
+    update = {}
+    if "name" in body:
+        update["name"] = str(body["name"]).strip()[:120]
+    if "pixel_id" in body:
+        pid = str(body["pixel_id"]).strip()
+        if not PIXEL_ID_RE.match(pid):
+            raise HTTPException(status_code=400, detail="Identifiant de Pixel invalide : uniquement des chiffres (8 à 20).")
+        update["pixel_id"] = pid
+    if "enabled" in body:
+        update["enabled"] = bool(body["enabled"])
+    if "is_default" in body:
+        update["is_default"] = bool(body["is_default"])
+    if "campaigns" in body:
+        update["campaigns"] = _clean_campaigns(body["campaigns"])
+    if "test_event_code" in body:
+        update["test_event_code"] = str(body["test_event_code"]).strip()[:50]
+    if update:
+        res = await db.meta_pixels.update_one({"id": pixel_doc_id}, {"$set": update})
+        if res.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Pixel introuvable")
+    return {"ok": True}
+
+
+@router.delete("/pixels/{pixel_doc_id}")
+async def delete_pixel(pixel_doc_id: str):
+    await db.meta_pixels.delete_one({"id": pixel_doc_id})
     return {"ok": True}
 
 

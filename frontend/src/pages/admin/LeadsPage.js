@@ -1,7 +1,8 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Search, Download, Eye, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
+import { Search, Download, Eye, Trash2, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { API, STATUS_LABELS, STATUS_COLORS, downloadBatch, fmtDateFr, fmtTimeFr, fmtError } from "@/api";
 
 const AMOUNTS = [
@@ -28,6 +29,21 @@ export default function LeadsPage({ status, title }) {
   const [selected, setSelected] = useState(new Set());
   const [detail, setDetail] = useState(null);
   const [exporting, setExporting] = useState(false);
+  const [confirmDel, setConfirmDel] = useState(null);
+
+  const doDelete = async () => {
+    if (!confirmDel) return;
+    try {
+      const res = await API.post("/admin/leads/bulk-delete", { lead_ids: confirmDel.ids });
+      toast.success(`${res.data.deleted} lead(s) supprimé(s).`);
+      setConfirmDel(null);
+      setDetail(null);
+      setSelected(new Set());
+      load();
+    } catch (e) {
+      toast.error(fmtError(e));
+    }
+  };
 
   const load = useCallback(() => {
     API.get("/admin/leads", {
@@ -125,6 +141,11 @@ export default function LeadsPage({ status, title }) {
               <FileDown className="h-4 w-4" /> Exporter la sélection ({selected.size})
             </button>
           )}
+          {selected.size > 0 && (
+            <button type="button" data-testid="delete-selection-btn" onClick={() => setConfirmDel({ ids: [...selected], label: `${selected.size} lead(s) sélectionné(s)` })} className="rounded-xl border border-red-300 px-4 py-2.5 text-sm font-semibold text-red-600 hover:bg-red-50 transition-colors inline-flex items-center gap-2">
+              <Trash2 className="h-4 w-4" /> Supprimer la sélection ({selected.size})
+            </button>
+          )}
           <button type="button" data-testid="export-filtered-btn" onClick={exportFiltered} className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors inline-flex items-center gap-2">
             <FileDown className="h-4 w-4" /> Exporter la vue filtrée
           </button>
@@ -188,9 +209,14 @@ export default function LeadsPage({ status, title }) {
                 <td className="p-3"><StatusBadge status={lead.status} /></td>
                 <td className="p-3 whitespace-nowrap">{lead.retrieved_at ? `${fmtDateFr(lead.retrieved_at)} ${fmtTimeFr(lead.retrieved_at)}` : "—"}</td>
                 <td className="p-3">
-                  <button type="button" data-testid={`view-lead-${lead.id.slice(0, 8)}`} onClick={() => openDetail(lead.id)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-[#FF683D] transition-colors">
-                    <Eye className="h-4 w-4" />
-                  </button>
+                  <div className="flex items-center gap-1">
+                    <button type="button" data-testid={`view-lead-${lead.id.slice(0, 8)}`} onClick={() => openDetail(lead.id)} className="rounded-lg p-2 text-gray-400 hover:bg-gray-100 hover:text-[#FF683D] transition-colors">
+                      <Eye className="h-4 w-4" />
+                    </button>
+                    <button type="button" data-testid={`delete-lead-${lead.id.slice(0, 8)}`} onClick={() => setConfirmDel({ ids: [lead.id], label: `${lead.first_name || ""} ${lead.last_name || ""}`.trim() || lead.phone_e164 || "ce lead" })} className="rounded-lg p-2 text-gray-400 hover:bg-red-50 hover:text-red-500 transition-colors">
+                      <Trash2 className="h-4 w-4" />
+                    </button>
+                  </div>
                 </td>
               </tr>
             ))}
@@ -265,12 +291,31 @@ export default function LeadsPage({ status, title }) {
                   {detail.lead.status !== "nouveau" && (
                     <button type="button" data-testid="lead-mark-nouveau" onClick={() => setLeadStatus(detail.lead.id, "nouveau")} className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50 transition-colors">Remettre en nouveau</button>
                   )}
+                  <button type="button" data-testid="lead-delete-detail" onClick={() => setConfirmDel({ ids: [detail.lead.id], label: `${detail.lead.first_name || ""} ${detail.lead.last_name || ""}`.trim() || "ce lead" })} className="rounded-xl bg-red-500 px-4 py-2.5 text-sm font-semibold text-white hover:bg-red-600 transition-colors inline-flex items-center gap-2">
+                    <Trash2 className="h-4 w-4" /> Supprimer
+                  </button>
                 </div>
               </div>
             </>
           )}
         </SheetContent>
       </Sheet>
+
+      {/* Confirmation suppression */}
+      <Dialog open={!!confirmDel} onOpenChange={(o) => !o && setConfirmDel(null)}>
+        <DialogContent className="max-w-sm" data-testid="lead-delete-dialog">
+          <DialogHeader>
+            <DialogTitle className="font-display text-lg">Supprimer définitivement ?</DialogTitle>
+          </DialogHeader>
+          <p className="text-sm text-gray-600">
+            Vous êtes sur le point de supprimer <b>{confirmDel?.label}</b>. Cette action est irréversible et efface aussi les réponses associées.
+          </p>
+          <DialogFooter>
+            <button type="button" onClick={() => setConfirmDel(null)} className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">Annuler</button>
+            <button type="button" data-testid="confirm-delete-lead-btn" onClick={doDelete} className="rounded-xl bg-red-500 px-5 py-2.5 text-sm font-semibold text-white hover:bg-red-600">Supprimer</button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 }

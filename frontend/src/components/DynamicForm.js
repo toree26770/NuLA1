@@ -189,7 +189,7 @@ function Field({ q, value, error, onChange, consentText }) {
   );
 }
 
-export default function DynamicForm({ form, texts, tracking, preview = false, compact = false }) {
+export default function DynamicForm({ form, texts, tracking, onConversion, preview = false, compact = false }) {
   const steps = form?.steps || [];
   const questions = form?.questions || [];
   const stepQuestions = useMemo(
@@ -269,6 +269,7 @@ export default function DynamicForm({ form, texts, tracking, preview = false, co
         meta: { ...tracking, started_at: startedAtRef.current, session_id: getSessionId(), website: honeypotRef.current?.value || "" },
       });
       trackEvent("form_submit", { step_index: stepIndex });
+      if (typeof onConversion === "function") onConversion();
       setDone(true);
     } catch (e) {
       const detail = e?.response?.data?.detail;

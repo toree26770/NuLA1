@@ -47,19 +47,23 @@ def normalize_email(raw):
     return normalized, None
 
 
+FRENCH_REGIONS = ["FR", "GP", "MQ", "GF", "RE", "YT", "PM", "WF", "NC", "PF", "BL", "MF"]
+FRENCH_CODES = {33, 262, 508, 590, 594, 596, 681, 687, 689}
+
+
 def normalize_phone_fr(raw):
     raw = clean_text(raw, 30)
     if not raw:
         return None, "Le numéro de téléphone est requis"
-    try:
-        parsed = phonenumbers.parse(raw, "FR")
-    except phonenumbers.NumberParseException:
-        return None, "Le numéro de téléphone est invalide"
-    if parsed.country_code != 33:
-        return None, "Seuls les numéros français (+33) sont acceptés"
-    if not phonenumbers.is_possible_number(parsed) or not phonenumbers.is_valid_number(parsed):
-        return None, "Le numéro de téléphone est invalide"
-    return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164), None
+    # On teste la métropole puis les territoires français d'outre-mer.
+    for region in FRENCH_REGIONS:
+        try:
+            parsed = phonenumbers.parse(raw, region)
+        except phonenumbers.NumberParseException:
+            continue
+        if parsed.country_code in FRENCH_CODES and phonenumbers.is_valid_number(parsed):
+            return phonenumbers.format_number(parsed, phonenumbers.PhoneNumberFormat.E164), None
+    return None, "Le numéro de téléphone est invalide"
 
 
 def validate_birthdate(value, min_age=18):
