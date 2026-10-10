@@ -320,7 +320,7 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
           )}
           {isLast ? (
             <button type="button" data-testid={tid("submit")} onClick={submit} disabled={submitting} className="flex-1 rounded-md bg-[#C8102E] px-6 py-3.5 font-semibold text-white hover:bg-[#a60d26] transition-colors font-['Manrope'] disabled:opacity-60">
-              {submitting ? "Envoi…" : (ft.submit_label || "Valider ma demande")}
+              {submitting ? "Envoi…" : (ft.submit_label || "Vérifiez mon éligibilité")}
             </button>
           ) : (
             <button type="button" data-testid={tid("continue")} onClick={() => validateStep(step) && setStep(step + 1)} className="flex-1 rounded-md bg-[#071D3A] px-6 py-3.5 font-semibold text-white hover:bg-[#0c2a52] transition-colors font-['Manrope'] inline-flex items-center justify-center gap-2">

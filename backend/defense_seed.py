@@ -22,7 +22,7 @@ DEFENSE_CONTENT["offer"].update({
 DEFENSE_CONTENT["form_texts"].update({
     "title": "Vérifiez votre éligibilité au Livret Défense",
     "subtitle": "Complétez votre demande gratuitement, sans engagement.",
-    "submit_label": "VALIDER MA DEMANDE",
+    "submit_label": "VÉRIFIEZ MON ÉLIGIBILITÉ",
     "continue_label": "CONTINUER",
     "consent_text": "J'accepte d'être recontacté(e) et la politique de confidentialité.",
     "confirm_title": "Votre demande a bien été enregistrée",
