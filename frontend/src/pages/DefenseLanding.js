@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ShieldCheck, TrendingUp, CalendarCheck, Wallet, Lock, FileText, Users, PhoneCall,
-  ChevronDown, Check, ArrowRight, Landmark,
+  ChevronDown, Check, ArrowRight,
 } from "lucide-react";
 import { API, getSessionId } from "@/api";
 import { loadPixels, trackSingle } from "@/metaPixel";
@@ -50,11 +50,30 @@ function Tricolore({ className = "" }) {
   );
 }
 
+function Logo({ dark = false, className = "" }) {
+  return (
+    <div className={`flex items-center gap-2.5 ${className}`} data-testid="defense-logo">
+      <span className="relative inline-flex h-9 w-9 items-center justify-center rounded-lg bg-[#071D3A] ring-1 ring-white/10 shadow-sm">
+        <span className="font-['Bricolage_Grotesque'] text-[15px] font-extrabold leading-none tracking-tight text-white">LD</span>
+        <span className="absolute inset-x-[3px] bottom-[3px] flex h-[3px] overflow-hidden rounded-full" aria-hidden>
+          <span className="flex-1 bg-[#2E5AA8]" />
+          <span className="flex-1 bg-white" />
+          <span className="flex-1 bg-[#C8102E]" />
+        </span>
+      </span>
+      <span className="leading-none">
+        <span className={`block font-['Bricolage_Grotesque'] text-[17px] font-extrabold tracking-tight ${dark ? "text-white" : "text-[#071D3A]"}`}>Livret Défense</span>
+        <span className={`mt-0.5 block text-[10px] font-semibold uppercase tracking-[0.22em] ${dark ? "text-white/45" : "text-[#163A63]/60"}`}>Épargne patrimoniale</span>
+      </span>
+    </div>
+  );
+}
+
 function CookieBanner({ onAccept }) {
   return (
     <div className="fixed bottom-0 inset-x-0 z-50 border-t border-[#163A63]/20 bg-white/95 backdrop-blur px-5 py-4 shadow-[0_-4px_20px_rgba(7,29,58,0.08)]" data-testid="defense-cookie-banner">
       <div className="mx-auto max-w-5xl flex flex-col md:flex-row md:items-center gap-3">
-        <p className="flex-1 text-sm text-[#071D3A]/75 font-['Outfit']">
+        <p className="flex-1 text-sm text-[#071D3A]/75 font-['Manrope']">
           Nous utilisons des cookies, dont des cookies de mesure publicitaire, pour améliorer votre expérience et évaluer nos campagnes. En poursuivant, vous les acceptez.
         </p>
         <button type="button" data-testid="defense-cookie-accept" onClick={onAccept} className="shrink-0 rounded-md bg-[#C8102E] px-6 py-2.5 text-sm font-semibold text-white hover:bg-[#a60d26] transition-colors">Accepter</button>
@@ -63,7 +82,8 @@ function CookieBanner({ onAccept }) {
   );
 }
 
-function EligibilityForm() {
+function EligibilityForm({ idPrefix = "defense" }) {
+  const tid = (s) => `${idPrefix}-${s}`;
   const [step, setStep] = useState(0);
   const [data, setData] = useState({ first_name: "", last_name: "", phone: "", email: "", situation: "", consent: false });
   const [errors, setErrors] = useState({});
@@ -103,28 +123,28 @@ function EligibilityForm() {
     } finally { setSubmitting(false); }
   };
 
-  const inputCls = "w-full rounded-md border-2 border-[#163A63]/15 bg-[#F5F6F8] px-4 py-3 text-[#071D3A] shadow-[inset_0_1px_2px_rgba(7,29,58,0.05)] outline-none focus:border-[#163A63] focus:ring-4 focus:ring-[#163A63]/10 transition font-['Outfit']";
-  const lbl = "block text-sm font-medium text-[#071D3A] mb-1.5 font-['Outfit']";
+  const inputCls = "w-full rounded-md border-2 border-[#163A63]/15 bg-[#F5F6F8] px-4 py-3 text-[#071D3A] shadow-[inset_0_1px_2px_rgba(7,29,58,0.05)] outline-none focus:border-[#163A63] focus:ring-4 focus:ring-[#163A63]/10 transition font-['Manrope']";
+  const lbl = "block text-sm font-medium text-[#071D3A] mb-1.5 font-['Manrope']";
 
   if (done) {
     return (
-      <div className="text-center py-8" data-testid="defense-confirmation">
+      <div className="text-center py-8" data-testid={tid("confirmation")}>
         <div className="mx-auto mb-5 flex h-16 w-16 items-center justify-center rounded-full bg-[#163A63]/10">
           <Check className="h-8 w-8 text-[#163A63]" />
         </div>
-        <h3 className="font-['Playfair_Display'] text-2xl font-bold text-[#071D3A]">Votre demande a bien été enregistrée</h3>
-        <p className="mt-3 text-[#071D3A]/70 font-['Outfit']">Un conseiller pourra prendre contact avec vous prochainement pour vous présenter les informations relatives au Livret Défense.</p>
+        <h3 className="font-['Bricolage_Grotesque'] text-2xl font-bold text-[#071D3A]">Votre demande a bien été enregistrée</h3>
+        <p className="mt-3 text-[#071D3A]/70 font-['Manrope']">Un conseiller pourra prendre contact avec vous prochainement pour vous présenter les informations relatives au Livret Défense.</p>
       </div>
     );
   }
 
   return (
-    <div data-testid="defense-form">
+    <div data-testid={tid("form")}>
       <div className="mb-6 flex items-center gap-3">
         {[0, 1].map((i) => (
           <div key={i} className="flex-1">
             <div className={`h-1.5 rounded-full ${step >= i ? "bg-[#C8102E]" : "bg-[#163A63]/15"}`} />
-            <span className="mt-1.5 block text-xs font-medium text-[#071D3A]/60 font-['Outfit']">Étape {i + 1} sur 2</span>
+            <span className="mt-1.5 block text-xs font-medium text-[#071D3A]/60 font-['Manrope']">Étape {i + 1} sur 2</span>
           </div>
         ))}
       </div>
@@ -136,26 +156,26 @@ function EligibilityForm() {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className={lbl}>Prénom</label>
-              <input data-testid="defense-first-name" className={inputCls} value={data.first_name} onChange={(e) => set("first_name", e.target.value)} />
+              <input data-testid={tid("first-name")} className={inputCls} value={data.first_name} onChange={(e) => set("first_name", e.target.value)} />
               {errors.first_name && <p className="mt-1 text-xs text-[#C8102E]">{errors.first_name}</p>}
             </div>
             <div>
               <label className={lbl}>Nom</label>
-              <input data-testid="defense-last-name" className={inputCls} value={data.last_name} onChange={(e) => set("last_name", e.target.value)} />
+              <input data-testid={tid("last-name")} className={inputCls} value={data.last_name} onChange={(e) => set("last_name", e.target.value)} />
               {errors.last_name && <p className="mt-1 text-xs text-[#C8102E]">{errors.last_name}</p>}
             </div>
           </div>
           <div>
             <label className={lbl}>Téléphone</label>
-            <input data-testid="defense-phone" type="tel" className={inputCls} placeholder="06 12 34 56 78" value={data.phone} onChange={(e) => set("phone", e.target.value)} />
+            <input data-testid={tid("phone")} type="tel" className={inputCls} placeholder="06 12 34 56 78" value={data.phone} onChange={(e) => set("phone", e.target.value)} />
             {errors.phone && <p className="mt-1 text-xs text-[#C8102E]">{errors.phone}</p>}
           </div>
           <div>
             <label className={lbl}>Adresse e-mail</label>
-            <input data-testid="defense-email" type="email" className={inputCls} placeholder="vous@exemple.fr" value={data.email} onChange={(e) => set("email", e.target.value)} />
+            <input data-testid={tid("email")} type="email" className={inputCls} placeholder="vous@exemple.fr" value={data.email} onChange={(e) => set("email", e.target.value)} />
             {errors.email && <p className="mt-1 text-xs text-[#C8102E]">{errors.email}</p>}
           </div>
-          <button type="button" data-testid="defense-continue" onClick={() => validateStep1() && setStep(1)} className="w-full rounded-md bg-[#071D3A] px-6 py-3.5 font-semibold text-white hover:bg-[#0c2a52] transition-colors font-['Outfit'] inline-flex items-center justify-center gap-2">
+          <button type="button" data-testid={tid("continue")} onClick={() => validateStep1() && setStep(1)} className="w-full rounded-md bg-[#071D3A] px-6 py-3.5 font-semibold text-white hover:bg-[#0c2a52] transition-colors font-['Manrope'] inline-flex items-center justify-center gap-2">
             Continuer <ArrowRight className="h-4 w-4" />
           </button>
         </div>
@@ -163,7 +183,7 @@ function EligibilityForm() {
         <div className="space-y-4">
           <div>
             <label className={lbl}>Votre situation</label>
-            <select data-testid="defense-situation" className={inputCls} value={data.situation} onChange={(e) => set("situation", e.target.value)}>
+            <select data-testid={tid("situation")} className={inputCls} value={data.situation} onChange={(e) => set("situation", e.target.value)}>
               <option value="">Sélectionnez…</option>
               <option>Salarié(e)</option>
               <option>Indépendant(e)</option>
@@ -173,19 +193,19 @@ function EligibilityForm() {
             </select>
           </div>
           <label className="flex items-start gap-3 cursor-pointer rounded-md border border-[#163A63]/15 bg-[#F5F6F8] p-3.5">
-            <input type="checkbox" data-testid="defense-consent" checked={data.consent} onChange={(e) => set("consent", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#C8102E]" />
-            <span className="text-sm text-[#071D3A]/75 font-['Outfit']">J'accepte la politique de confidentialité et d'être recontacté par un conseiller afin de recevoir des informations sur le Livret Défense.</span>
+            <input type="checkbox" data-testid={tid("consent")} checked={data.consent} onChange={(e) => set("consent", e.target.checked)} className="mt-0.5 h-4 w-4 accent-[#C8102E]" />
+            <span className="text-sm text-[#071D3A]/75 font-['Manrope']">J'accepte la politique de confidentialité et d'être recontacté par un conseiller afin de recevoir des informations sur le Livret Défense.</span>
           </label>
           {errors.consent && <p className="text-xs text-[#C8102E]">{errors.consent}</p>}
           <div className="flex gap-3">
-            <button type="button" onClick={() => setStep(0)} className="rounded-md border-2 border-[#163A63]/20 px-5 py-3.5 font-semibold text-[#071D3A] hover:bg-[#F5F6F8] transition-colors font-['Outfit']">Retour</button>
-            <button type="button" data-testid="defense-submit" onClick={submit} disabled={submitting} className="flex-1 rounded-md bg-[#C8102E] px-6 py-3.5 font-semibold text-white hover:bg-[#a60d26] transition-colors font-['Outfit'] disabled:opacity-60">
+            <button type="button" onClick={() => setStep(0)} className="rounded-md border-2 border-[#163A63]/20 px-5 py-3.5 font-semibold text-[#071D3A] hover:bg-[#F5F6F8] transition-colors font-['Manrope']">Retour</button>
+            <button type="button" data-testid={tid("submit")} onClick={submit} disabled={submitting} className="flex-1 rounded-md bg-[#C8102E] px-6 py-3.5 font-semibold text-white hover:bg-[#a60d26] transition-colors font-['Manrope'] disabled:opacity-60">
               {submitting ? "Envoi…" : "Valider ma demande"}
             </button>
           </div>
         </div>
       )}
-      <p className="mt-4 text-center text-xs text-[#071D3A]/45 font-['Outfit']">Demande gratuite et sans engagement.</p>
+      <p className="mt-4 text-center text-xs text-[#071D3A]/45 font-['Manrope']">Demande gratuite et sans engagement.</p>
     </div>
   );
 }
@@ -211,17 +231,13 @@ export default function DefenseLanding() {
   const scrollToForm = () => document.getElementById("eligibilite")?.scrollIntoView({ behavior: "smooth" });
 
   return (
-    <div className="min-h-screen bg-white font-['Outfit'] text-[#071D3A]" data-testid="defense-landing">
+    <div className="min-h-screen bg-white font-['Manrope'] text-[#071D3A]" data-testid="defense-landing">
       <div className="h-1 w-full"><Tricolore /></div>
 
       {/* Header */}
       <header className="sticky top-0 z-40 border-b border-[#163A63]/10 bg-white/90 backdrop-blur">
         <div className="mx-auto max-w-6xl flex items-center justify-between px-5 py-3.5">
-          <div className="flex items-center gap-2.5">
-            <span className="flex h-9 w-9 items-center justify-center rounded-md bg-[#071D3A]"><Landmark className="h-5 w-5 text-white" /></span>
-            <span className="font-['Playfair_Display'] text-lg font-bold tracking-tight">Livret Défense</span>
-            <span className="ml-1 h-4 w-6 overflow-hidden rounded-[2px] ring-1 ring-black/5"><Tricolore /></span>
-          </div>
+          <Logo />
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-[#071D3A]/70">
             <a href="#livret" className="hover:text-[#071D3A]">Le livret</a>
             <a href="#tous" className="hover:text-[#071D3A]">Pour qui ?</a>
@@ -232,28 +248,44 @@ export default function DefenseLanding() {
       </header>
 
       {/* Hero */}
-      <section className="relative overflow-hidden bg-[#F5F6F8]">
-        <div className="mx-auto max-w-6xl grid lg:grid-cols-2 gap-12 items-center px-5 py-16 lg:py-24">
+      <section className="relative overflow-hidden bg-gradient-to-b from-[#F5F6F8] via-white to-white border-b border-[#163A63]/10">
+        <div className="mx-auto max-w-6xl grid lg:grid-cols-[1.05fr_1fr] gap-10 lg:gap-14 items-center px-5 py-10 lg:py-14">
           <motion.div {...fade}>
             <span className="inline-flex items-center gap-2 rounded-full border border-[#163A63]/20 bg-white px-3.5 py-1.5 text-xs font-semibold tracking-wide text-[#163A63] uppercase">
               <span className="h-3 w-5 overflow-hidden rounded-[2px]"><Tricolore /></span> Épargne patrimoniale française
             </span>
-            <h1 className="mt-5 font-['Playfair_Display'] text-4xl md:text-5xl lg:text-[3.4rem] font-bold leading-[1.05] text-[#071D3A]">Livret d'Épargne Défense</h1>
-            <p className="mt-5 text-lg text-[#071D3A]/80 max-w-xl">Une solution d'épargne à découvrir, accessible à tous les Français éligibles.</p>
-            <p className="mt-2 text-[#071D3A]/60 max-w-xl">Civils ou militaires, découvrez les caractéristiques du Livret Défense et les conditions pour en bénéficier.</p>
-            <div className="mt-8 flex flex-wrap gap-3">
-              <button type="button" data-testid="hero-cta-primary" onClick={scrollToForm} className="rounded-md bg-[#C8102E] px-7 py-3.5 font-semibold text-white hover:bg-[#a60d26] transition-colors inline-flex items-center gap-2">Vérifier mon éligibilité <ArrowRight className="h-4 w-4" /></button>
-              <a href="#livret" className="rounded-md border-2 border-[#071D3A]/20 px-7 py-3.5 font-semibold text-[#071D3A] hover:bg-white transition-colors">Découvrir le livret</a>
-            </div>
+            <h1 className="mt-5 font-['Bricolage_Grotesque'] text-4xl md:text-5xl lg:text-[3.3rem] font-extrabold leading-[1.04] tracking-tight text-[#071D3A]">Livret d'Épargne Défense</h1>
+            <p className="mt-5 text-lg text-[#071D3A]/80 max-w-xl">Une solution d'épargne à découvrir, accessible à tous les Français éligibles — civils ou militaires.</p>
+            <ul className="mt-7 space-y-3">
+              {[
+                { icon: ShieldCheck, t: "Capital garanti selon l'offre" },
+                { icon: CalendarCheck, t: "Intérêts mensuels" },
+                { icon: Lock, t: "Demande gratuite et sans engagement" },
+              ].map((x) => (
+                <li key={x.t} className="flex items-center gap-3 text-[#071D3A]/80 font-['Manrope']">
+                  <span className="flex h-7 w-7 items-center justify-center rounded-full bg-[#163A63]/10"><x.icon className="h-4 w-4 text-[#163A63]" /></span>
+                  {x.t}
+                </li>
+              ))}
+            </ul>
           </motion.div>
+
           <motion.div {...fade} transition={{ duration: 0.7, delay: 0.1 }} className="relative">
-            <div className="rounded-2xl bg-[#071D3A] p-8 text-white shadow-2xl">
-              <p className="text-sm uppercase tracking-widest text-white/60">Taux net annuel annoncé</p>
-              <p className="mt-2 font-['Playfair_Display'] text-6xl font-bold">7,10 %</p>
-              <p className="mt-1 text-sm text-white/60">Selon les conditions contractuelles de l'offre.</p>
-              <div className="mt-6 grid grid-cols-2 gap-4 border-t border-white/10 pt-6 text-sm">
-                <div><ShieldCheck className="h-5 w-5 text-[#C8102E]" /><p className="mt-1.5 font-medium">Capital garanti</p><p className="text-white/55 text-xs">Selon l'offre</p></div>
-                <div><CalendarCheck className="h-5 w-5 text-[#C8102E]" /><p className="mt-1.5 font-medium">Intérêts mensuels</p><p className="text-white/55 text-xs">Selon l'offre</p></div>
+            <div className="rounded-2xl bg-white border border-[#163A63]/10 shadow-2xl overflow-hidden" data-testid="hero-form-card">
+              <div className="flex items-stretch justify-between gap-4 bg-[#071D3A] px-6 py-5 text-white">
+                <div>
+                  <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-white/55 font-['Manrope']">Taux net annuel annoncé</p>
+                  <p className="mt-1 font-['Bricolage_Grotesque'] text-5xl font-extrabold leading-none tracking-tight">7,10<span className="ml-0.5 text-[#C8102E]">%</span></p>
+                </div>
+                <div className="flex flex-col justify-center border-l border-white/10 pl-4 text-right text-[11px] leading-snug text-white/65 font-['Manrope']">
+                  <span>Capital garanti</span>
+                  <span className="mt-1">Intérêts mensuels</span>
+                  <span className="mt-1 text-white/40">Selon l'offre</span>
+                </div>
+              </div>
+              <div className="p-6 md:p-7">
+                <p className="mb-4 font-['Bricolage_Grotesque'] text-lg font-bold text-[#071D3A]">Vérifiez votre éligibilité en 1 minute</p>
+                <EligibilityForm idPrefix="hero" />
               </div>
             </div>
           </motion.div>
@@ -263,14 +295,14 @@ export default function DefenseLanding() {
       {/* Caractéristiques */}
       <section id="livret" className="mx-auto max-w-6xl px-5 py-16 lg:py-20">
         <motion.div {...fade} className="max-w-2xl">
-          <h2 className="font-['Playfair_Display'] text-3xl md:text-4xl font-bold">Les caractéristiques du Livret Défense</h2>
+          <h2 className="font-['Bricolage_Grotesque'] text-3xl md:text-4xl font-bold">Les caractéristiques du Livret Défense</h2>
           <p className="mt-3 text-[#071D3A]/65">Des conditions présentées de manière transparente, confirmées par les documents contractuels du produit.</p>
         </motion.div>
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {FEATURES.map((f, i) => (
             <motion.div key={f.title} {...fade} transition={{ duration: 0.5, delay: i * 0.06 }} className="rounded-xl border border-[#163A63]/10 bg-white p-6 shadow-sm hover:shadow-md transition-shadow">
               <span className="flex h-11 w-11 items-center justify-center rounded-lg bg-[#F5F6F8]"><f.icon className="h-5 w-5 text-[#163A63]" /></span>
-              <h3 className="mt-4 font-['Playfair_Display'] text-xl font-bold">{f.title}</h3>
+              <h3 className="mt-4 font-['Bricolage_Grotesque'] text-xl font-bold">{f.title}</h3>
               <p className="mt-2 text-sm text-[#071D3A]/65 leading-relaxed">{f.text}</p>
             </motion.div>
           ))}
@@ -282,7 +314,7 @@ export default function DefenseLanding() {
         <div className="mx-auto max-w-5xl px-5 py-16 lg:py-20 text-center">
           <motion.div {...fade}>
             <span className="mx-auto mb-5 inline-block h-5 w-9 overflow-hidden rounded-[2px]"><Tricolore /></span>
-            <h2 className="font-['Playfair_Display'] text-3xl md:text-4xl font-bold">La Défense concerne tous les Français.</h2>
+            <h2 className="font-['Bricolage_Grotesque'] text-3xl md:text-4xl font-bold">La Défense concerne tous les Français.</h2>
             <p className="mt-3 text-lg text-white/70">Un livret qui ne s'adresse pas uniquement aux militaires.</p>
             <p className="mx-auto mt-6 max-w-3xl text-white/70 leading-relaxed">
               Le Livret d'Épargne Défense est présenté comme une solution destinée aux particuliers remplissant les conditions d'accès, indépendamment de leur profession. Que vous soyez salarié, indépendant, retraité ou militaire, vous pouvez consulter les conditions du produit et demander une étude d'éligibilité.
@@ -296,7 +328,7 @@ export default function DefenseLanding() {
 
       {/* Avantages */}
       <section className="mx-auto max-w-6xl px-5 py-16 lg:py-20">
-        <motion.h2 {...fade} className="font-['Playfair_Display'] text-3xl md:text-4xl font-bold max-w-2xl">Une approche claire et transparente de votre épargne.</motion.h2>
+        <motion.h2 {...fade} className="font-['Bricolage_Grotesque'] text-3xl md:text-4xl font-bold max-w-2xl">Une approche claire et transparente de votre épargne.</motion.h2>
         <div className="mt-10 grid sm:grid-cols-2 lg:grid-cols-4 gap-5">
           {ADVANTAGES.map((a, i) => (
             <motion.div key={a.title} {...fade} transition={{ duration: 0.5, delay: i * 0.06 }} className="rounded-xl bg-[#F5F6F8] p-6">
@@ -311,12 +343,12 @@ export default function DefenseLanding() {
       {/* Comment ça marche */}
       <section className="bg-[#F5F6F8]">
         <div className="mx-auto max-w-6xl px-5 py-16 lg:py-20">
-          <motion.h2 {...fade} className="font-['Playfair_Display'] text-3xl md:text-4xl font-bold text-center">Comment ça marche ?</motion.h2>
+          <motion.h2 {...fade} className="font-['Bricolage_Grotesque'] text-3xl md:text-4xl font-bold text-center">Comment ça marche ?</motion.h2>
           <div className="mt-12 grid md:grid-cols-3 gap-8">
             {STEPS.map((s, i) => (
               <motion.div key={s.n} {...fade} transition={{ duration: 0.5, delay: i * 0.1 }} className="relative">
-                <span className="font-['Playfair_Display'] text-5xl font-bold text-[#163A63]/20">{s.n}</span>
-                <h3 className="mt-2 font-['Playfair_Display'] text-xl font-bold text-[#071D3A]">{s.title}</h3>
+                <span className="font-['Bricolage_Grotesque'] text-5xl font-bold text-[#163A63]/20">{s.n}</span>
+                <h3 className="mt-2 font-['Bricolage_Grotesque'] text-xl font-bold text-[#071D3A]">{s.title}</h3>
                 <p className="mt-2 text-sm text-[#071D3A]/65">{s.text}</p>
               </motion.div>
             ))}
@@ -327,7 +359,7 @@ export default function DefenseLanding() {
       {/* Formulaire */}
       <section id="eligibilite" className="mx-auto max-w-6xl px-5 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-start">
         <motion.div {...fade}>
-          <h2 className="font-['Playfair_Display'] text-3xl md:text-4xl font-bold">Vérifiez votre éligibilité au Livret Défense</h2>
+          <h2 className="font-['Bricolage_Grotesque'] text-3xl md:text-4xl font-bold">Vérifiez votre éligibilité au Livret Défense</h2>
           <p className="mt-4 text-[#071D3A]/70 text-lg">Quelques instants suffisent pour effectuer votre demande d'information, gratuitement et sans engagement.</p>
           <ul className="mt-6 space-y-3">
             {["Demande 100 % gratuite", "Sans engagement de souscription", "Réponse d'un conseiller"].map((t) => (
@@ -336,14 +368,14 @@ export default function DefenseLanding() {
           </ul>
         </motion.div>
         <motion.div {...fade} transition={{ duration: 0.6, delay: 0.1 }} className="rounded-2xl border border-[#163A63]/10 bg-white p-6 md:p-8 shadow-xl">
-          <EligibilityForm />
+          <EligibilityForm idPrefix="bottom" />
         </motion.div>
       </section>
 
       {/* FAQ */}
       <section id="faq" className="bg-[#F5F6F8]">
         <div className="mx-auto max-w-3xl px-5 py-16 lg:py-20">
-          <motion.h2 {...fade} className="font-['Playfair_Display'] text-3xl md:text-4xl font-bold text-center">Questions fréquentes</motion.h2>
+          <motion.h2 {...fade} className="font-['Bricolage_Grotesque'] text-3xl md:text-4xl font-bold text-center">Questions fréquentes</motion.h2>
           <div className="mt-10 space-y-3">
             {FAQ.map((item, i) => (
               <div key={i} className="rounded-xl border border-[#163A63]/10 bg-white overflow-hidden" data-testid={`faq-${i}`}>
@@ -363,8 +395,8 @@ export default function DefenseLanding() {
         <div className="h-1 w-full"><Tricolore /></div>
         <div className="mx-auto max-w-6xl px-5 py-12 grid sm:grid-cols-2 lg:grid-cols-4 gap-8 text-sm">
           <div>
-            <div className="flex items-center gap-2 text-white"><Landmark className="h-5 w-5" /><span className="font-['Playfair_Display'] text-lg font-bold">Livret Défense</span></div>
-            <p className="mt-3 text-white/50">Demande d'information sur le Livret d'Épargne Défense. Service de mise en relation, sans garantie gouvernementale ni agrément d'État non documenté.</p>
+            <Logo dark />
+            <p className="mt-4 text-white/50">Demande d'information sur le Livret d'Épargne Défense. Service de mise en relation, sans garantie gouvernementale ni agrément d'État non documenté.</p>
           </div>
           <div>
             <p className="font-semibold text-white">Informations</p>
