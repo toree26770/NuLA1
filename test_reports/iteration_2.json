@@ -1,0 +1,35 @@
+{
+  "summary": "Validated 2 follow-up fixes: (1) French phone prefix dropdown now works — 12 FR/DOM-TOM options rendered via data-testid='field-phone-prefix'; selecting 🇬🇵 Guadeloupe (+590) + typing '0690001122' submits a lead stored as '+590690001122' in Mongo. France (+33) default also works ('+33612345678'). (2) Meta Pixel loads WITHOUT consent: on fresh page load (localStorage/sessionStorage cleared) window.fbq becomes a function, fbevents.js + signals/config/1905482920834524 are requested, and window.__metaPixelEvents immediately contains {event:'PageView',pixel_id:'1905482920834524'}. After a successful 2-step form submit a single {event:'Lead',pixel_id:'1905482920834524'} is appended (no duplicates). Consent banner is now a simple cookies notice: visible at bottom with 'Accepter' button, dismissed on click, and does NOT reappear after reload (persisted via localStorage 'claude_cookie_notice'='1'). Backend pytest regression: 25/25 pass (sequentially). Admin UI (Meta pixel manager & leads list) still functional.",
+  "backend_issues": {
+    "critical": [],
+    "minor": [
+      {"endpoint": "/api/leads", "issue": "Default rate_limit_per_hour=8 is very low: parallel pytest-xdist run triggers 429s on the last 2 lead-deletion tests. Sequential run (-o addopts='') passes 25/25. Not a product bug but hurts CI determinism — bump_rate_limit fixture should run per-worker or tests should serialize lead creation."}
+    ]
+  },
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_report_links": [
+    "/app/backend/tests/backend_test.py",
+    "/app/test_reports/pytest/pytest_results.xml"
+  ],
+  "action_items": [
+    "Optional: make the bump_rate_limit pytest fixture compatible with pytest-xdist (e.g. remove -n from pytest.ini addopts or make the fixture apply once via a lock file) to avoid flaky 429 under parallel runs."
+  ],
+  "critical_code_review_comments": [
+    "metaPixel.js header comment still says 'chargement UNIQUEMENT après consentement' but the behavior is now 'load always'. Update the comment to avoid misleading future readers.",
+    "FR_PREFIXES contains two labels mapping to '+262' (Réunion & Mayotte) and three mapping to '+590' (Guadeloupe, St-Barth, St-Martin). The composed phone is identical for duplicates — fine for E.164 but the backend will not distinguish territory in phone_e164 (acceptable since phonenumbers normalizes to the same prefix).",
+    "ConsentBanner is purely cosmetic now (no gating). Consider renaming to CookieNotice for clarity.",
+    "DynamicForm.PhoneField initial state ignores subsequent prop updates (deps intentionally empty) — fine for current use (never prefilled)."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "100% (25/25 sequential)", "frontend": "100% (phone dropdown, GP submit, FR submit, pixel-without-consent, banner persistence, PageView=1 & Lead=1)"},
+  "test_credentials": "admin@claude-offre.fr / Claude2026!Admin",
+  "seed_data_creation": "Created 2 TEST leads via UI (test.gp681622@gmail.com +590690001122, test.fr802843@gmail.com +33612345678) + many pytest leads with gmail.com addresses. Backend settings were temporarily set to rate_limit_per_hour=1000/min_submit_seconds=0 for UI tests and then restored to defaults (8 / 3 / 30).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Fixes verified. If re-running pytest in parallel (default pytest.ini uses -n via xdist), the last 2 lead-deletion tests may 429. Use `python -m pytest backend/tests/backend_test.py -o addopts='' -v` to run sequentially. Default admin settings are 8 leads/hr/IP + 3s min_submit — bump via /api/admin/settings before any heavy UI submit testing.",
+  "rca of the issue": "N/A — both reported fixes work as specified. Pixel loads unconditionally in useMetaPixel (LandingPage.js L71-95); PageView guarded by pageViewFired ref + sessionStorage key; Lead guarded by leadFired ref and called from DynamicForm's onConversion after successful POST /api/leads. Phone field uses PhoneField component with FR_PREFIXES select + composePhone helper (strips leading 0, prepends +<code>) → backend normalize_phone_fr accepts all FR + DOM-TOM country codes."
+}
