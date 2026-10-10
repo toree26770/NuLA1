@@ -15,6 +15,7 @@ from auth import router as auth_router, seed_admin
 from public_routes import router as public_router
 from admin_routes import router as admin_router
 from form_routes import router as form_router
+from defense_routes import router as defense_router
 from seed_data import seed_content, seed_form, seed_pixels
 
 app = FastAPI(title="Claude Offre — API")
@@ -24,6 +25,7 @@ api_router.include_router(auth_router)
 api_router.include_router(public_router)
 api_router.include_router(admin_router)
 api_router.include_router(form_router)
+api_router.include_router(defense_router)
 
 
 @api_router.get("/")

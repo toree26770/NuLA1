@@ -1,110 +1,142 @@
 {
-  "theme": "dark",
-  "app_type": "hybrid_fullstack",
-  "design_concept": "Premium Dark Finance & Tech. Deep midnight blue background with a subtle laptop in the decor, paired with luminous orange accents for high-conversion CTAs. Elegant serif typography for headings to convey trust, wealth, and institutional authority, contrasting with a clean, high-density dashboard for the admin area.",
+  "project_title": "LIVRET D'ÉPARGNE DÉFENSE - Institutional French Wealth Management Landing Page",
+  "archetype": "ARCHETYPE 4: SWISS & HIGH-CONTRAST / FRENCH INSTITUTIONAL WEALTH",
+  "app_type": "marketing_site",
+  "theme": "Light, Prestigious French Institutional Wealth Management (Sober, Trustworthy, Highly Legible)",
   "typography": {
-    "headings": {
-      "family": "Playfair Display, serif",
-      "weights": ["400", "600", "700"],
-      "usage": "Use Playfair Display for all major headings, landing page titles, and the 'Claude.' logo. Convey elegance and authority."
-    },
-    "body": {
-      "family": "Outfit, sans-serif",
-      "weights": ["300", "400", "500", "600"],
-      "usage": "Use for all body text, form inputs, labels, and the entire admin dashboard for optimal readability."
-    },
-    "hierarchy": {
-      "h1": "text-4xl md:text-5xl lg:text-6xl tracking-tight leading-tight",
-      "h2": "text-3xl md:text-4xl tracking-tight",
-      "h3": "text-xl md:text-2xl",
-      "body": "text-base leading-relaxed",
-      "small": "text-sm tracking-wide"
+    "font_family_headings": "Playfair Display, Georgia, serif",
+    "font_family_body": "Outfit, system-ui, sans-serif",
+    "google_fonts_url": "https://fonts.googleapis.com/css2?family=Playfair+Display:ital,wght@0,500;0,600;0,700;0,800;1,400&family=Outfit:wght@300;400;500;600;700&display=swap",
+    "font_rules": {
+      "h1": "font-display font-bold text-3xl sm:text-4xl lg:text-5xl text-[#071D3A] tracking-tight leading-[1.15]",
+      "h2": "font-display font-bold text-2xl sm:text-3xl lg:text-4xl text-[#071D3A] tracking-tight leading-snug",
+      "h3": "font-display font-semibold text-xl sm:text-2xl text-[#071D3A]",
+      "h4": "font-sans font-semibold text-lg text-[#071D3A]",
+      "subtitle": "font-sans text-base sm:text-lg text-[#334155] leading-relaxed max-w-2xl",
+      "label_overline": "font-sans text-xs uppercase tracking-[0.2em] font-semibold text-[#163A63]",
+      "rate_highlight": "font-display font-extrabold text-4xl sm:text-5xl lg:text-6xl text-[#C8102E] tracking-tight"
     }
   },
   "colors": {
-    "background": {
-      "midnight": "#101722",
-      "deep": "#0B111B",
-      "form_card": "#F8F6F2",
-      "admin_bg": "#F8F6F2",
-      "admin_sidebar": "#101722"
-    },
-    "brand": {
-      "orange": "#FF683D",
-      "orange_light": "#FF914D"
-    },
-    "text": {
-      "light": "#F8F6F2",
-      "dark": "#0B111B",
-      "muted_light": "rgba(248, 246, 242, 0.7)",
-      "muted_dark": "rgba(11, 17, 27, 0.6)"
-    },
-    "borders": {
-      "light": "rgba(255, 255, 255, 0.1)",
-      "dark": "rgba(11, 17, 27, 0.1)",
-      "orange": "#FF683D"
+    "primary_deep_navy": "#071D3A",
+    "secondary_institutional_blue": "#163A63",
+    "french_crimson_red": "#C8102E",
+    "french_crimson_hover": "#A00C24",
+    "background_pure_white": "#FFFFFF",
+    "background_light_gray": "#F5F6F8",
+    "background_slate_soft": "#F8FAFC",
+    "text_dark_heading": "#071D3A",
+    "text_body_charcoal": "#334155",
+    "text_muted": "#64748B",
+    "border_subtle": "#E2E8F0",
+    "border_active": "#163A63",
+    "tricolore_blue": "#00205B",
+    "tricolore_white": "#FFFFFF",
+    "tricolore_red": "#C8102E",
+    "css_variables": {
+      "--bg-primary": "#FFFFFF",
+      "--bg-secondary": "#F5F6F8",
+      "--text-heading": "#071D3A",
+      "--text-body": "#334155",
+      "--color-navy": "#071D3A",
+      "--color-blue-inst": "#163A63",
+      "--color-red-accent": "#C8102E",
+      "--color-red-hover": "#A00C24",
+      "--border-color": "#E2E8F0"
     }
   },
-  "layouts": {
-    "marketing_landing": {
-      "desktop": "Two-column grid layout. Left column (col-span-1 lg:col-span-7) contains visual identity, huge serif title, offer box, arguments. Right column (col-span-1 lg:col-span-5) contains the premium white form card.",
-      "mobile": "Single column. CRITICAL PRIORITY: Form must be immediately accessible. Fast loading, wide buttons, no horizontal scrolling.",
-      "background": "Hero section must have the laptop background image with a heavy dark navy overlay (bg-[#101722]/80 or 90) so text remains readable."
-    },
-    "admin_dashboard": {
-      "structure": "Sidebar navigation (dark theme #101722) + Main content area (clean light theme #F8F6F2).",
-      "spacing": "Dense layout for data. Use p-6 for main panels. Utilize Shadcn tables for leads management."
+  "tricolore_usage_rules": {
+    "top_bar": "A delicate 3px top border on the fixed header: bg-gradient-to-r from-[#00205B] via-[#FFFFFF] to-[#C8102E]",
+    "badge_accent": "Refined 3-color dot indicator or miniature vertical pill (Blue, White, Red) next to official labels",
+    "section_divider": "Subtle 2px horizontal rule with small central tricolore accent mark",
+    "prohibition": "NO large flag backgrounds, NO emoji flags, NO unofficial governmental seals or fake ministerial logos"
+  },
+  "spacing_and_layout": {
+    "container_padding": "px-4 sm:px-6 lg:px-8 max-w-7xl mx-auto",
+    "section_spacing": "py-16 md:py-24",
+    "card_padding": "p-6 sm:p-8",
+    "grid_gap": "gap-6 md:gap-8",
+    "border_radius": {
+      "cards": "rounded-xl",
+      "buttons": "rounded-lg",
+      "pills": "rounded-full",
+      "inputs": "rounded-lg"
     }
   },
-  "components": {
-    "buttons": {
-      "primary": "bg-[#FF683D] hover:bg-[#FF914D] text-white rounded-xl py-4 px-8 text-lg font-semibold transition-all duration-300 shadow-[0_4px_14px_0_rgba(255,104,61,0.39)] hover:shadow-[0_6px_20px_rgba(255,104,61,0.23)] hover:-translate-y-0.5",
-      "secondary": "bg-transparent border border-[#FF683D] text-[#FF683D] hover:bg-[#FF683D]/10 rounded-xl"
+  "key_components": {
+    "header": {
+      "style": "sticky top-0 z-50 bg-white/95 backdrop-blur-md border-b border-gray-200 shadow-sm",
+      "features": "Top 3px tricolore gradient strip, institutional typography logo with crest/shield icon, menu links (Caractéristiques, Éligibilité, Avantages, FAQ), and CTA button 'Vérifier mon éligibilité'"
     },
-    "cards": {
-      "form_card": "bg-[#F8F6F2] rounded-2xl shadow-2xl p-6 md:p-8 text-[#0B111B] border border-white/20 relative overflow-hidden",
-      "offer_box": "border-2 border-[#FF683D] rounded-xl p-6 bg-[#101722]/50 backdrop-blur-sm"
+    "hero_section": {
+      "style": "bg-gradient-to-b from-[#F5F6F8] via-white to-white py-16 md:py-24 border-b border-gray-200/80",
+      "elements": [
+        "Official institutional badge: 'Produit Épargne Défense & Réserve — Taux 2026'",
+        "H1 title: 'LIVRET D'ÉPARGNE DÉFENSE'",
+        "Prominent rate display: '7,10% Net Annuel' with 'Capital Garanti & Intérêts Mensuels'",
+        "Primary action button: 'VÉRIFIER MON ÉLIGIBILITÉ' (Crimson Red #C8102E with arrow icon)",
+        "Secondary button: 'DÉCOUVRIR LE LIVRET' (Navy outline)",
+        "Trust indicators bar: '100% Capital Garanti', 'Zéro Frais de Gestion', 'Disponibilité Totale'"
+      ]
     },
-    "inputs": {
-      "style": "bg-white border border-gray-200 text-[#0B111B] rounded-lg p-4 w-full focus:ring-2 focus:ring-[#FF683D] focus:border-transparent transition-all",
-      "labels": "text-sm font-medium text-gray-700 mb-2 block"
+    "feature_cards": {
+      "card_1": {"title": "7,10% Net Annuel", "desc": "Rendement garanti contractuellement, calculé quotidiennement et versé chaque mois.", "icon": "TrendingUp"},
+      "card_2": {"title": "Capital 100% Garanti", "desc": "Protection intégrale des sommes déposées, couverte jusqu'à 100 000 € par déposant.", "icon": "ShieldCheck"},
+      "card_3": {"title": "Intérêts Mensuels", "desc": "Versements des intérêts directement crédités sur votre livret le 1er de chaque mois.", "icon": "CalendarCheck"},
+      "card_4": {"title": "Fonds Disponibles", "desc": "Retraits et versements libres à tout moment, sans pénalité ni blocage temporel.", "icon": "LockOpen"}
+    },
+    "open_to_all_section": {
+      "style": "bg-[#071D3A] text-white rounded-2xl p-8 sm:p-12 shadow-xl my-12 border border-[#163A63]",
+      "banner_text": "ACCESSIBILITÉ UNIVERSELLE — AUCUNE CARRIÈRE MILITAIRE NÉCESSAIRE",
+      "message": "Le Livret d'Épargne Défense est ouvert à 100% des citoyens et résidents français éligibles (civils, salariés, fonctionnaires, retraités, indépendants ou militaires). Un placement citoyen au service de la souveraineté."
+    },
+    "eligibility_form": {
+      "style": "bg-white border-2 border-[#163A63]/20 rounded-2xl p-6 sm:p-10 shadow-xl max-w-2xl mx-auto my-12",
+      "step_1": "Étape 1 sur 2 : Situation & Éligibilité Civile (Nom, Prénom, Statut de résidence, Tranche d'investissement prévisionnelle)",
+      "step_2": "Étape 2 sur 2 : Coordonnées de contact (Email, Téléphone, Département)",
+      "input_style": "w-full bg-[#F5F6F8] border border-gray-300 rounded-lg p-3.5 text-[#071D3A] placeholder-gray-400 focus:bg-white focus:border-[#163A63] focus:ring-2 focus:ring-[#163A63]/20 transition-all outline-none",
+      "submit_btn": "w-full bg-[#C8102E] hover:bg-[#A00C24] text-white font-bold py-4 px-8 rounded-lg text-lg shadow-md transition-all duration-200 transform hover:-translate-y-0.5"
+    },
+    "how_it_works": {
+      "step_01": "01. Vérification d'Éligibilité en 2 min",
+      "step_02": "02. Ouverture & Dépôt Sécurisé",
+      "step_03": "03. Perception des Intérêts Mensuels"
+    },
+    "faq_accordion": {
+      "style": "border border-gray-200 rounded-xl divide-y divide-gray-200 bg-white shadow-sm",
+      "items": [
+        {"q": "Le Livret d'Épargne Défense est-il réservé aux militaires ?", "a": "Non. Le Livret est accessible à l'ensemble des résidents fiscaux français majeurs, qu'ils soient civils ou militaires."},
+        {"q": "Comment est garanti mon capital ?", "a": "Votre capital est garanti à 100% sans aucun risque de perte, conformément aux normes de protection bancaire patrimoniale."},
+        {"q": "Quand et comment sont versés les intérêts ?", "a": "Les intérêts sont calculés mensuellement à hauteur de 7,10% net annuel et versés automatiquement sur votre compte le premier jour de chaque mois."},
+        {"q": "Existe-t-il des frais sur ce livret ?", "a": "Aucun frais. Ni frais d'ouverture, ni frais de gestion, ni frais de retrait."},
+        {"q": "Quelle est la durée minimale de conservation des fonds ?", "a": "Vos fonds restent entièrement disponibles. Vous pouvez effectuer des virements sortants à tout moment."}
+      ]
+    },
+    "footer": {
+      "style": "bg-[#071D3A] text-slate-300 pt-16 pb-12 border-t-4 border-[#163A63]",
+      "legal_notice": "Produit financier soumis à conditions d'éligibilité. Les informations présentées ne constituent pas un conseil en investissement automatisé. Capital garanti selon les modalités contractuelles. Livret Épargne Défense est une marque déposée institutionnelle.",
+      "links": ["Mentions Légales", "Politique de Confidentialité", "Gestion des Cookies", "Garantie des Dépôts", "Réclamations & Médiation"]
+    },
+    "cookie_banner": {
+      "style": "fixed bottom-4 left-4 right-4 md:left-auto md:right-6 md:max-w-md bg-[#071D3A] text-white p-5 rounded-xl shadow-2xl border border-[#163A63] z-50 flex flex-col gap-3 text-sm"
     }
   },
-  "motion": {
-    "form_transitions": "Use Framer Motion for multi-step form progression. Slide in from right (x: 20, opacity: 0) to center (x: 0, opacity: 1) on step change.",
-    "hover": "Subtle lift (-translate-y-1) and shadow increase on interactive elements.",
-    "list_stagger": "Staggered fade-in for the 3 advantage icons/labels."
+  "media_and_assets": {
+    "hero_building_image": "https://images.unsplash.com/photo-1595591330979-bf94c70da6d6?crop=entropy&cs=srgb&fm=jpg&q=85",
+    "paris_architecture_image": "https://images.unsplash.com/photo-1581262177533-1b1760b87952?crop=entropy&cs=srgb&fm=jpg&q=85"
   },
-  "image_urls": [
-    {
-      "url": "https://images.unsplash.com/photo-1531297484001-80022131f5a1?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NjA2OTV8MHwxfHNlYXJjaHwyfHxsYXB0b3AlMjBkYXJrJTIwYmFja2dyb3VuZHxlbnwwfHx8fDE3OTE1NTAwMDZ8MA&ixlib=rb-4.1.0&q=85",
-      "category": "hero_background",
-      "description": "Dark and elegant laptop background for the landing page hero section. Must be covered with a dark blue overlay to ensure text readability."
-    },
-    {
-      "url": "https://images.unsplash.com/photo-1611974789855-9c2a0a7236a3?crop=entropy&cs=srgb&fm=jpg&ixid=M3w4NTYxOTJ8MHwxfHNlYXJjaHwyfHxmaW5hbmNlJTIwZ3JhcGglMjBkYXJrfGVufDB8fHx8MTc5MTU1MDAxMHww&ixlib=rb-4.1.0&q=85",
-      "category": "admin_dashboard_placeholder",
-      "description": "Financial stock market graph, can be used as a decorative element in the admin login page or dashboard empty states."
-    }
-  ],
-  "accessibility": {
-    "contrast": "Ensure the orange (#FF683D) on white (#F8F6F2) has sufficient contrast for text, if not, use it for large text or backgrounds only. White text on dark navy (#101722) passes AAA.",
-    "data_testid": "All form inputs, buttons, and navigation links MUST have data-testid attributes for testing (e.g., data-testid='submit-lead-btn')."
+  "GENERAL_UI_UX_DESIGN_GUIDELINES": {
+    "test_id_rule": "All interactive and key informational elements MUST include a data-testid attribute in kebab-case format (e.g. data-testid=\"eligibility-form-submit-button\", data-testid=\"hero-cta-check-eligibility\", data-testid=\"faq-item-0\").",
+    "contrast_and_accessibility": "Normal text contrast ratio minimum 4.5:1. Use white backgrounds for dense forms and light slate backgrounds for body sections to maximize contrast.",
+    "no_ai_slop": "NO purple gradients (#7351B7 forbidden), NO neon glow effects, NO generic centered text blocks, NO cardless transparent popups.",
+    "hover_states": "Hover states must explicitly declare text color alongside background color change (e.g. hover:bg-[#071D3A] hover:text-white)."
   },
-  "libraries": {
-    "icons": "lucide-react (use icons like Lock, TrendingUp, ShieldCheck, Asterisk)",
-    "motion": "framer-motion (for smooth form step transitions)",
-    "forms": "react-hook-form + zod (for rigorous validation)",
-    "components": "shadcn/ui (highly customized to match the premium theme)"
-  },
-  "instructions_to_main_agent": "Build a French-language premium landing page and admin dashboard. The landing page must perfectly mirror the provided Meta Ads reference: dark midnight blue background with a subtle laptop image, a prominent white serif 'Claude.' logo with an orange asterisk, and a 2-column layout. The left column holds the main serif headline ('Ne ratez pas l'entrée en Bourse...'), an orange-bordered offer box ('LIVRET CLAUDE - TAUX FIXE 8,10%...'), and 3 advantage points with orange icons. The right column holds a white, rounded form card with an 'OFFRE LIMITÉE' eyebrow, an elegant multi-step form, and wide orange rounded buttons. Mobile responsiveness is the ABSOLUTE PRIORITY. The admin area (/admin) should be a clean, modern SaaS dashboard with a dark sidebar and light content area, including a drag-and-drop form builder, lead management with CSV export, and Meta campaign tracking. Do NOT use completely transparent backgrounds behind text. Make sure to use Playfair Display for headings and Outfit for body text.",
-  "UNIVERSAL_GUIDELINES_FOR_MAIN_AGENT": [
-    "Do not use default generic centered layouts. Follow the explicit 2-column asymmetrical layout for desktop.",
-    "Never use `transition: all`. Specify exact properties (e.g., `transition-colors`, `transition-transform`).",
-    "Add `data-testid` to all interactive elements.",
-    "Use generous padding. Cramped designs look cheap, and this must look like a premium institutional investment.",
-    "Ensure all text is in French as requested.",
-    "Mobile layout must stack cleanly without horizontal scroll. Form must be high up on mobile.",
-    "Use Shadcn components for complex interactions but heavily style them using Tailwind to match the custom #101722 and #FF683D color scheme."
+  "instructions_to_main_agent": [
+    "Build the Livret d'Épargne Défense landing page as a distinct, highly polished institutional financial web app.",
+    "Strictly follow the light institutional color scheme: Deep Navy #071D3A, Institutional Blue #163A63, Crisp White #FFFFFF, Light Gray #F5F6F8, French Crimson Red #C8102E.",
+    "Incorporate the French tricolore accent tastefully via top header borders, section accent bars, and badge icons.",
+    "Ensure every interactive element (buttons, step triggers, inputs, accordion toggles, links) contains proper data-testid attributes.",
+    "Implement the 2-step eligibility form with clean state management and validation feedback.",
+    "Keep typography sharp and editorial: Playfair Display for headings and Outfit for body text."
   ]
 }
