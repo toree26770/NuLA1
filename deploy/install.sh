@@ -46,6 +46,20 @@ if [ -z "${ADMIN_PASSWORD:-}" ]; then
   GEN_PWD=1
 fi
 
+echo
+echo -e "${B}Deuxième site « Livret Défense » (optionnel)${N}"
+echo "Laissez vide si vous ne voulez PAS activer le second site."
+read -rp "$(echo -e "     Sous-domaine Défense (ex: militaire.axinvest.app) : ")" DEFENSE_DOMAIN
+if [ -n "${DEFENSE_DOMAIN:-}" ]; then
+  read -rp "$(echo -e "     E-mail admin Défense [admin@${DEFENSE_DOMAIN}] : ")" DEFENSE_ADMIN_EMAIL
+  DEFENSE_ADMIN_EMAIL=${DEFENSE_ADMIN_EMAIL:-admin@${DEFENSE_DOMAIN}}
+  read -rp "$(echo -e "     Mot de passe admin Défense (laisser vide = généré automatiquement) : ")" DEFENSE_ADMIN_PASSWORD
+  if [ -z "${DEFENSE_ADMIN_PASSWORD:-}" ]; then
+    DEFENSE_ADMIN_PASSWORD="$(openssl rand -base64 12 | tr -d '/+=' | cut -c1-14)Aa1!"
+    GEN_DEF_PWD=1
+  fi
+fi
+
 APP_DIR="/var/www/app"
 JWT_SECRET="$(openssl rand -hex 32)"
 
@@ -54,6 +68,10 @@ say "Récapitulatif"
 echo "   Dépôt     : $REPO_URL"
 echo "   Domaine   : https://$DOMAIN"
 echo "   Admin     : $ADMIN_EMAIL"
+if [ -n "${DEFENSE_DOMAIN:-}" ]; then
+  echo "   Défense   : https://$DEFENSE_DOMAIN"
+  echo "   Admin Déf.: $DEFENSE_ADMIN_EMAIL"
+fi
 echo
 read -rp "$(echo -e "${B}Tout est bon ? On lance l'installation ? (o/n) ${N}")" GO
 case "${GO,,}" in o|oui|y|yes) ;; *) die "Installation annulée." ;; esac
@@ -123,15 +141,25 @@ grep -viE '^(emergentintegrations|litellm)([=<> @]|$)' requirements.txt \
   | grep -v 'customer-assets.emergentagent.com' > /tmp/requirements.vps.txt
 ./venv/bin/pip install -q -r /tmp/requirements.vps.txt
 
+CORS_ORIGINS="https://${DOMAIN}"
+[ -n "${DEFENSE_DOMAIN:-}" ] && CORS_ORIGINS="${CORS_ORIGINS},https://${DEFENSE_DOMAIN}"
+
 cat > "$APP_DIR/backend/.env" <<EOF
 MONGO_URL=mongodb://localhost:27017
 DB_NAME=claude_leads
-CORS_ORIGINS=https://${DOMAIN}
+CORS_ORIGINS=${CORS_ORIGINS}
 JWT_SECRET=${JWT_SECRET}
 ADMIN_EMAIL=${ADMIN_EMAIL}
 ADMIN_PASSWORD=${ADMIN_PASSWORD}
 FRONTEND_URL=https://${DOMAIN}
 EOF
+
+if [ -n "${DEFENSE_DOMAIN:-}" ]; then
+  cat >> "$APP_DIR/backend/.env" <<EOF
+DEFENSE_ADMIN_EMAIL=${DEFENSE_ADMIN_EMAIL}
+DEFENSE_ADMIN_PASSWORD=${DEFENSE_ADMIN_PASSWORD}
+EOF
+fi
 
 cat > /etc/systemd/system/claude-backend.service <<EOF
 [Unit]
@@ -160,6 +188,9 @@ cd "$APP_DIR/frontend"
 cat > "$APP_DIR/frontend/.env" <<EOF
 REACT_APP_BACKEND_URL=https://${DOMAIN}
 EOF
+if [ -n "${DEFENSE_DOMAIN:-}" ]; then
+  echo "REACT_APP_DEFENSE_HOST=${DEFENSE_DOMAIN}" >> "$APP_DIR/frontend/.env"
+fi
 yarn install --silent
 yarn build
 ok "Site construit"
@@ -179,11 +210,13 @@ ok "Certificat généré"
 # 7) Nginx (écoute 80 ET 443 : fonctionne avec Cloudflare Flexible OU Full)
 # ----------------------------------------------------------------------------
 say "Configuration de Nginx…"
+SERVER_NAMES="${DOMAIN}"
+[ -n "${DEFENSE_DOMAIN:-}" ] && SERVER_NAMES="${DOMAIN} ${DEFENSE_DOMAIN}"
 cat > /etc/nginx/sites-available/claude <<EOF
 server {
     listen 80;
     listen 443 ssl;
-    server_name ${DOMAIN};
+    server_name ${SERVER_NAMES};
 
     ssl_certificate     /etc/ssl/claude/cert.pem;
     ssl_certificate_key /etc/ssl/claude/key.pem;
@@ -241,6 +274,15 @@ echo -e "       Proxy   : ${B}Proxied (nuage orange 🟠)${N}"
 echo
 echo -e "  2. Cloudflare → onglet ${B}SSL/TLS${N} → mode ${B}Full${N}."
 echo
+if [ -n "${DEFENSE_DOMAIN:-}" ]; then
+  echo -e "${B}Pour le second site « Livret Défense » : AJOUTEZ un 2ᵉ enregistrement DNS${N}"
+  echo -e "  Sur Cloudflare → ${B}Add record${N} :"
+  echo -e "       Type    : ${B}A${N}"
+  echo -e "       Name    : ${B}${DEFENSE_DOMAIN%%.*}${N}   (le début de ${DEFENSE_DOMAIN})"
+  echo -e "       Content : ${B}${SERVER_IP}${N}   (la MÊME IP de ce serveur)"
+  echo -e "       Proxy   : ${B}Proxied (nuage orange 🟠)${N}"
+  echo
+fi
 echo -e "${B}Ensuite, ouvrez :${N} ${C}https://${DOMAIN}${N}"
 echo -e "${B}Administration :${N}  ${C}https://${DOMAIN}/admin${N}"
 echo
@@ -252,5 +294,16 @@ else
   echo -e "   Mot de passe  : ${B}(celui que vous avez choisi)${N}"
 fi
 echo
+if [ -n "${DEFENSE_DOMAIN:-}" ]; then
+  echo -e "${B}Site Défense :${N}   ${C}https://${DEFENSE_DOMAIN}${N}"
+  echo -e "${B}Admin Défense :${N}  ${C}https://${DEFENSE_DOMAIN}/admin${N}"
+  echo -e "   E-mail        : ${B}${DEFENSE_ADMIN_EMAIL}${N}"
+  if [ "${GEN_DEF_PWD:-0}" = "1" ]; then
+    echo -e "   Mot de passe  : ${B}${DEFENSE_ADMIN_PASSWORD}${N}   ${Y}(notez-le !)${N}"
+  else
+    echo -e "   Mot de passe  : ${B}(celui que vous avez choisi)${N}"
+  fi
+  echo
+fi
 echo -e "${Y}Pour tout mettre à jour plus tard, relancez simplement cette même commande.${N}"
 echo

@@ -55,10 +55,12 @@ Copiez-collez cette **seule ligne** (remplacez `moi/claude-leads` par VOTRE dép
 bash <(curl -fsSL https://raw.githubusercontent.com/moi/claude-leads/main/deploy/install.sh)
 ```
 
-Le script va vous poser **3 questions** :
+Le script va vous poser **quelques questions** :
 1. L'adresse de votre dépôt GitHub → collez-la.
-2. Votre sous-domaine → tapez `app.mondomaine.com`.
+2. Votre sous-domaine Claude → tapez `app.mondomaine.com`.
 3. Votre e-mail admin (+ mot de passe, ou laissez vide pour en générer un).
+4. **Sous-domaine Défense** (optionnel) → tapez `militaire.axinvest.app` pour activer le 2ᵉ site (ou laissez vide pour l'ignorer).
+5. Si vous avez mis un sous-domaine Défense : e-mail + mot de passe de l'admin Défense.
 
 Puis **tout s'installe automatiquement** (comptez 5 à 10 minutes ☕).
 
@@ -74,6 +76,27 @@ Puis **tout s'installe automatiquement** (comptez 5 à 10 minutes ☕).
 1. Attendez ~1 à 5 minutes que Cloudflare propage le sous-domaine.
 2. Ouvrez **https://app.mondomaine.com** → votre landing page doit s'afficher avec le cadenas 🔒.
 3. Testez le formulaire, puis connectez-vous sur **/admin**.
+
+---
+
+## 🟩 ÉTAPE 5 — Activer le 2ᵉ site « Livret Défense » (militaire.axinvest.app)
+
+Le 2ᵉ site tourne sur **le même serveur** et la **même base** (données 100 % séparées, collections `defense_*`). Vous avez juste **un enregistrement DNS en plus** à créer.
+
+1. **Cloudflare → votre domaine → DNS → Add record** :
+   | Champ | Valeur |
+   |-------|--------|
+   | **Type** | `A` |
+   | **Name** | `militaire`  ← donnera `militaire.axinvest.app` |
+   | **IPv4 address** | la **MÊME IP de votre VPS** que pour Claude |
+   | **Proxy status** | 🟠 **Proxied** (nuage orange) |
+2. Cliquez **Save**. (Le mode SSL/TLS **Full** déjà réglé à l'étape 1 s'applique aussi.)
+3. Lors de l'installation (ou de la mise à jour), à la question **« Sous-domaine Défense »**, tapez `militaire.axinvest.app`, puis saisissez l'e-mail et le mot de passe de l'admin Défense.
+4. Attendez 1 à 5 minutes, puis ouvrez :
+   - **https://militaire.axinvest.app** → la landing Défense s'affiche à la racine 🔒
+   - **https://militaire.axinvest.app/admin** → l'administration Défense (identique à Claude, mais données séparées).
+
+> 💡 Si le site Défense est déjà en place mais que vous avez modifié l'app : refaites « Save to GitHub » puis relancez la **même commande** d'installation.
 
 ---
 

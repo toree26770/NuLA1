@@ -1,8 +1,17 @@
 import axios from "axios";
 import { isDefenseHost } from "@/defenseBase";
 
+// Sur le sous-domaine Défense (ex. militaire.axinvest.app), le site et son
+// backend sont servis par la MÊME origine : on appelle donc "/api" sur cette
+// origine (même serveur) au lieu du domaine Claude compilé en dur. Partout
+// ailleurs (Preview, domaine Claude), on utilise REACT_APP_BACKEND_URL.
+const BACKEND_BASE =
+  isDefenseHost && typeof window !== "undefined"
+    ? window.location.origin
+    : process.env.REACT_APP_BACKEND_URL;
+
 export const API = axios.create({
-  baseURL: `${process.env.REACT_APP_BACKEND_URL}/api`,
+  baseURL: `${BACKEND_BASE}/api`,
   withCredentials: true,
 });
 
