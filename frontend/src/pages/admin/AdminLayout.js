@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { API } from "@/api";
-import { isDefenseHost, DEFENSE_ADMIN_BASE } from "@/defenseBase";
+import { isDefenseHost, DEFENSE_ADMIN_BASE, applyDefenseBranding } from "@/defenseBase";
 
 const MENU = [
   { path: "", label: "Tableau de bord", icon: LayoutDashboard, end: true, testid: "nav-dashboard" },
@@ -59,11 +59,12 @@ export default function AdminLayout() {
   const brandName = inDefense ? "Défense" : "Claude";
 
   useEffect(() => {
+    if (inDefense) applyDefenseBranding("Administration — Livret d'Épargne Défense");
     API.get("/auth/me")
       .then((res) => setAdmin(res.data))
       .catch(() => navigate(`${adminBase}/login`, { replace: true }))
       .finally(() => setChecked(true));
-  }, [navigate, adminBase]);
+  }, [navigate, adminBase, inDefense]);
 
   const logout = async () => {
     try {

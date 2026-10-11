@@ -1,8 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Asterisk, Lock } from "lucide-react";
 import { API, fmtError } from "@/api";
-import { isDefenseHost, DEFENSE_ADMIN_BASE } from "@/defenseBase";
+import { isDefenseHost, DEFENSE_ADMIN_BASE, applyDefenseBranding } from "@/defenseBase";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -12,6 +12,10 @@ export default function AdminLogin() {
   const navigate = useNavigate();
   const inDefense = isDefenseHost || (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
   const adminBase = inDefense ? DEFENSE_ADMIN_BASE : "/admin";
+
+  useEffect(() => {
+    if (inDefense) applyDefenseBranding("Administration — Livret d'Épargne Défense");
+  }, [inDefense]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -32,9 +36,15 @@ export default function AdminLogin() {
     <div className="min-h-screen bg-[#0B111B] flex items-center justify-center px-5" data-testid="admin-login-page">
       <div className="w-full max-w-md">
         <div className="flex items-center justify-center gap-1 mb-8">
-          <span className="font-display text-3xl font-bold text-[#F8F6F2]">Claude</span>
-          <span className="text-[#FF683D] font-display text-3xl font-bold">.</span>
-          <Asterisk className="h-8 w-8 text-[#FF683D]" strokeWidth={2.5} />
+          {inDefense ? (
+            <span className="font-display text-3xl font-bold text-[#F8F6F2]">Livret <span className="text-[#C8102E]">Défense</span></span>
+          ) : (
+            <>
+              <span className="font-display text-3xl font-bold text-[#F8F6F2]">Claude</span>
+              <span className="text-[#FF683D] font-display text-3xl font-bold">.</span>
+              <Asterisk className="h-8 w-8 text-[#FF683D]" strokeWidth={2.5} />
+            </>
+          )}
         </div>
         <form onSubmit={submit} className="bg-[#F8F6F2] rounded-2xl shadow-2xl p-8" data-testid="admin-login-form">
           <div className="flex items-center gap-2.5 mb-1.5">

@@ -5,6 +5,7 @@ import {
   ChevronDown, Check, ArrowRight,
 } from "lucide-react";
 import { API, getSessionId, trackDefense } from "@/api";
+import { applyDefenseBranding } from "@/defenseBase";
 import { loadPixels, trackSingle } from "@/metaPixel";
 
 const NAVY = "#071D3A";
@@ -347,6 +348,7 @@ export default function DefenseLanding() {
   }, []);
 
   useEffect(() => {
+    applyDefenseBranding();
     API.get("/defense/form/published").then((r) => setForm(r.data)).catch(() => {});
     API.get("/defense/content").then((r) => setContent(r.data)).catch(() => {});
   }, []);
