@@ -368,8 +368,29 @@ export default function LivretLanding() {
             <p className="mb-5 inline-flex items-center gap-2 text-sm font-semibold tracking-widest text-[#FF6B3D]">
               <span className="h-2 w-2 rounded-full bg-[#FF6B3D]" /> COMPTE RÉMUNÉRÉ — SUPER LIVRET
             </p>
+
+            {/* Taux 5% — très visible */}
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.5, delay: 0.15 }}
+              className="mb-7 flex items-center gap-4"
+              data-testid="livret-hero-rate"
+            >
+              <div className="relative">
+                <span className="absolute inset-0 rounded-3xl bg-[#FF6B3D] opacity-60 blur-2xl animate-pulse" />
+                <div className="relative rounded-3xl bg-gradient-to-br from-[#FF8A5B] to-[#E8542A] px-6 py-3 shadow-2xl shadow-[#FF6B3D]/50 ring-1 ring-white/20">
+                  <span className="block font-['Bricolage_Grotesque'] text-6xl font-extrabold leading-none text-white drop-shadow sm:text-7xl">5%</span>
+                </div>
+              </div>
+              <div className="leading-tight">
+                <span className="block font-['Bricolage_Grotesque'] text-2xl font-extrabold text-white sm:text-3xl">NET garanti</span>
+                <span className="mt-1 block text-sm font-semibold uppercase tracking-wider text-[#FF6B3D]">pendant 12 mois</span>
+              </div>
+            </motion.div>
+
             <h1 className="font-['Bricolage_Grotesque'] text-4xl font-extrabold leading-[1.05] text-white sm:text-5xl">
-              Un compte rémunéré à <span className="text-[#FF6B3D]">5 % net garanti</span>, pour faire vraiment travailler votre épargne
+              Faites vraiment <span className="text-[#FF6B3D]">travailler votre épargne</span> avec le Super Livret
             </h1>
             <p className="mt-6 max-w-xl text-base text-white/70 sm:text-lg leading-relaxed">
               Le Super Livret est un placement financier sans risque : capital garanti à 100 %, aucun frais de gestion, et un taux boosté à 5 % net pendant 12 mois, dans la limite de 75 000 € par titulaire. Vos fonds restent disponibles à tout moment.
