@@ -276,11 +276,14 @@ function EligibilityForm({ idPrefix = "livret", form, content }) {
 }
 
 // ---------------------------------------------------------------------------
-function Stat({ value, label }) {
+function Stat({ icon: Icon, value, label }) {
   return (
-    <div>
-      <p className="font-['Bricolage_Grotesque'] text-3xl sm:text-4xl font-extrabold text-white">{value}</p>
-      <p className="mt-1 text-sm text-white/55 font-['Manrope']">{label}</p>
+    <div className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur transition-colors hover:border-[#FF6B3D]/50 hover:bg-white/[0.07]">
+      <div className="mb-2 flex h-9 w-9 items-center justify-center rounded-xl bg-[#FF6B3D]/15">
+        <Icon className="h-5 w-5 text-[#FF6B3D]" strokeWidth={2.5} />
+      </div>
+      <p className="font-['Bricolage_Grotesque'] text-3xl font-extrabold leading-none text-white sm:text-4xl">{value}</p>
+      <p className="mt-1.5 text-xs font-medium uppercase tracking-wider text-white/55 font-['Manrope']">{label}</p>
     </div>
   );
 }
@@ -395,10 +398,10 @@ export default function LivretLanding() {
             <p className="mt-6 max-w-xl text-base text-white/70 sm:text-lg leading-relaxed">
               Le Super Livret est un placement financier sans risque : capital garanti à 100 %, aucun frais de gestion, et un taux boosté à 5 % net pendant 12 mois, dans la limite de 75 000 € par titulaire. Vos fonds restent disponibles à tout moment.
             </p>
-            <div className="mt-9 grid grid-cols-3 gap-6 border-t border-white/10 pt-7">
-              <Stat value="5%" label="garanti 12 mois" />
-              <Stat value="100%" label="capital garanti" />
-              <Stat value="0€" label="frais de gestion" />
+            <div className="mt-9 grid grid-cols-3 gap-3 sm:gap-4">
+              <Stat icon={TrendingUp} value="5%" label="garanti 12 mois" />
+              <Stat icon={ShieldCheck} value="100%" label="capital garanti" />
+              <Stat icon={CreditCard} value="0€" label="frais de gestion" />
             </div>
           </motion.div>
 
