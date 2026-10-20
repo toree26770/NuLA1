@@ -121,7 +121,11 @@ Même principe que le site Défense : **même serveur, même base** (données 10
 
 ## 🔄 Mettre à jour plus tard (quand vous modifiez l'app)
 
-Après avoir refait « Save to GitHub » dans Emergent, reconnectez-vous au VPS (Étape 2) et relancez **exactement la même commande** (Étape 3). Le script récupère le nouveau code, reconstruit et redémarre tout. C'est tout. ✅
+Après avoir refait « Save to GitHub » dans Emergent, reconnectez-vous au VPS (Étape 2) et relancez **exactement la même commande** (Étape 3).
+
+Le script **détecte automatiquement** que l'app est déjà installée et vous propose une **« mise à jour rapide »** : répondez `O` → il **garde toute votre configuration** (domaines, identifiants, clé de session) sans reposer les questions, récupère le nouveau code, reconstruit le site et **redémarre le backend**. C'est tout. ✅
+
+> 🔑 Pendant la mise à jour rapide, il propose aussi (facultatif) de **réinitialiser un mot de passe admin** : si vous avez oublié / mal noté un mot de passe, tapez-en un nouveau (simple à retenir) — laissez vide pour ne rien changer.
 
 ---
 
@@ -131,9 +135,10 @@ Après avoir refait « Save to GitHub » dans Emergent, reconnectez-vous au VPS 
 |----------|-----------|
 | « This site can't be reached » | Attendez quelques minutes (propagation Cloudflare), vérifiez l'enregistrement A (Étape 1). |
 | « Too many redirects » | Cloudflare → SSL/TLS → mettez le mode sur **Full** (pas « Flexible »). |
+| **Admin : erreur « Not Found » / 404 au login** | Le backend tourne sur l'ancien code. Tapez : `systemctl restart claude-backend` puis réessayez. |
 | Page blanche / erreur 502 | Reconnectez-vous au VPS et tapez : `systemctl restart claude-backend nginx` |
 | Voir ce qui se passe côté serveur | `journalctl -u claude-backend -f` (Ctrl+C pour sortir) |
-| Je veux refaire une installation propre | Relancez simplement la commande de l'Étape 3. |
+| Je veux refaire une installation propre | Relancez la commande de l'Étape 3 et répondez `n` à « mise à jour rapide ». |
 
 ---
 

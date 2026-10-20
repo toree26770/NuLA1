@@ -28,6 +28,76 @@ echo
 echo "Je vais vous poser 3 questions, puis tout s'installe tout seul."
 echo
 
+APP_DIR="/var/www/app"
+
+# ============================================================================
+# MODE MISE À JOUR : si l'application est déjà installée, on GARDE toute la
+# configuration existante (domaines, identifiants, clés de session) et on met
+# simplement à jour le code. Plus besoin de retaper quoi que ce soit.
+# ============================================================================
+if [ -f "$APP_DIR/backend/.env" ] && [ -d "$APP_DIR/.git" ]; then
+  echo -e "${B}➜ Installation existante détectée sur ce serveur.${N}"
+  read -rp "$(echo -e "Mise à jour rapide en gardant votre configuration actuelle ? (O/n) ")" UPD
+  if [[ ! "${UPD,,}" =~ ^(n|non|no)$ ]]; then
+    set_env() {
+      python3 - "$3" "$1" "$2" <<'PY'
+import sys
+f, k, v = sys.argv[1], sys.argv[2], sys.argv[3]
+lines = open(f).read().splitlines()
+out, done = [], False
+for l in lines:
+    if l.startswith(k + "="):
+        out.append(k + "=" + v); done = True
+    else:
+        out.append(l)
+if not done:
+    out.append(k + "=" + v)
+open(f, "w").write("\n".join(out) + "\n")
+PY
+    }
+
+    echo
+    echo -e "${B}Réinitialiser un mot de passe admin ? (facultatif)${N}"
+    echo "Laissez VIDE et appuyez simplement sur Entrée pour ne rien changer."
+    read -rp "   Nouveau mot de passe admin principal     : " NEW_MAIN_PWD
+    read -rp "   Nouveau mot de passe admin Défense        : " NEW_DEF_PWD
+    read -rp "   Nouveau mot de passe admin Super Livret   : " NEW_LIV_PWD
+    if [ -n "${NEW_MAIN_PWD:-}" ]; then set_env ADMIN_PASSWORD "$NEW_MAIN_PWD" "$APP_DIR/backend/.env"; echo "   ✔ mot de passe admin principal mis à jour"; fi
+    if [ -n "${NEW_DEF_PWD:-}" ];  then set_env DEFENSE_ADMIN_PASSWORD "$NEW_DEF_PWD" "$APP_DIR/backend/.env"; echo "   ✔ mot de passe admin Défense mis à jour"; fi
+    if [ -n "${NEW_LIV_PWD:-}" ];  then set_env LIVRET_ADMIN_PASSWORD "$NEW_LIV_PWD" "$APP_DIR/backend/.env"; echo "   ✔ mot de passe admin Super Livret mis à jour"; fi
+
+    say "Récupération du nouveau code (git pull)…"
+    git -C "$APP_DIR" pull --ff-only || die "git pull a échoué. Avez-vous bien fait « Save to GitHub » ?"
+
+    say "Mise à jour du backend…"
+    cd "$APP_DIR/backend"
+    [ -d venv ] || python3 -m venv venv
+    ./venv/bin/pip install --upgrade pip -q
+    grep -viE '^(emergentintegrations|litellm)([=<> @]|$)' requirements.txt \
+      | grep -v 'customer-assets.emergentagent.com' > /tmp/requirements.vps.txt
+    ./venv/bin/pip install -q -r /tmp/requirements.vps.txt
+
+    say "Reconstruction du site (frontend) — quelques minutes…"
+    cd "$APP_DIR/frontend"
+    yarn install --silent
+    yarn build
+
+    say "Redémarrage des services…"
+    systemctl restart claude-backend
+    systemctl restart nginx
+
+    echo
+    ok "Mise à jour terminée ! Votre configuration a été conservée."
+    if [ -n "${NEW_MAIN_PWD:-}${NEW_DEF_PWD:-}${NEW_LIV_PWD:-}" ]; then
+      echo -e "${Y}Les mots de passe réinitialisés sont actifs dès maintenant.${N}"
+    fi
+    echo
+    exit 0
+  fi
+  echo -e "${Y}Ré-installation complète : vous allez être reguidé pour la configuration.${N}"
+  echo
+fi
+
 # ----------------------------------------------------------------------------
 # 1) Questions
 # ----------------------------------------------------------------------------
@@ -203,7 +273,8 @@ WantedBy=multi-user.target
 EOF
 
 systemctl daemon-reload
-systemctl enable --now claude-backend
+systemctl enable claude-backend >/dev/null 2>&1 || true
+systemctl restart claude-backend
 ok "Backend démarré (port interne 8001)"
 
 # ----------------------------------------------------------------------------
