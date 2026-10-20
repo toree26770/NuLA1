@@ -32,13 +32,13 @@ function composePhone(prefix, local) {
 }
 
 const FAQ = [
-  { q: "Qu'est-ce qu'un compte rémunéré ?", a: "Un compte rémunéré est un placement sur lequel votre épargne génère des intérêts, tout en restant disponible. Le Super Livret applique un taux boosté de 5 % brut garanti pendant 12 mois." },
-  { q: "Quelle est la différence entre le Livret A et un super livret ?", a: "Le Livret A est un placement réglementé dont le taux est fixé par l'État. Le Super Livret est une offre commerciale qui propose un taux boosté temporaire, ici 5 % brut garanti pendant 12 mois dans la limite de 75 000 €." },
-  { q: "Le taux de 5 % brut est-il garanti pendant toute la durée du placement ?", a: "Le taux de 5 % brut est garanti pendant 12 mois, dans la limite de 75 000 € versés. Au-delà de cette période, le taux appliqué peut évoluer selon les conditions en vigueur." },
+  { q: "Qu'est-ce qu'un compte rémunéré ?", a: "Un compte rémunéré est un placement sur lequel votre épargne génère des intérêts, tout en restant disponible. Le Super Livret applique un taux boosté de 5 % net garanti pendant 12 mois." },
+  { q: "Quelle est la différence entre le Livret A et un super livret ?", a: "Le Livret A est un placement réglementé dont le taux est fixé par l'État. Le Super Livret est une offre commerciale qui propose un taux boosté temporaire, ici 5 % net garanti pendant 12 mois dans la limite de 75 000 €." },
+  { q: "Le taux de 5 % net est-il garanti pendant toute la durée du placement ?", a: "Le taux de 5 % net est garanti pendant 12 mois, dans la limite de 75 000 € versés. Au-delà de cette période, le taux appliqué peut évoluer selon les conditions en vigueur." },
   { q: "Mon capital est-il garanti sur ce compte rémunéré ?", a: "Oui : le capital versé est garanti à 100 %, sans exposition aux marchés financiers." },
   { q: "Puis-je retirer mon argent à tout moment ?", a: "Oui, vos fonds restent disponibles à tout moment, sans blocage ni pénalité de retrait." },
-  { q: "Quel est le plafond de versement du Super Livret ?", a: "Le taux boosté de 5 % brut s'applique dans la limite de 75 000 € versés par titulaire." },
-  { q: "Comment sont imposés les intérêts de ce placement financier ?", a: "Les intérêts sont soumis au prélèvement forfaitaire unique (PFU) de 30 %, sauf option pour le barème de l'impôt sur le revenu. La simulation présentée est fournie à titre indicatif." },
+  { q: "Quel est le plafond de versement du Super Livret ?", a: "Le taux boosté de 5 % net s'applique dans la limite de 75 000 € versés par titulaire." },
+  { q: "Comment sont imposés les intérêts de ce placement financier ?", a: "Le taux de 5 % est présenté net : les intérêts annoncés correspondent au montant qui vous revient sur la période de 12 mois. La simulation présentée est fournie à titre indicatif et non contractuel." },
 ];
 
 // ---------------------------------------------------------------------------
@@ -342,9 +342,8 @@ export default function LivretLanding() {
   const scrollToForm = () => { document.getElementById("livret-form-top")?.scrollIntoView({ behavior: "smooth", block: "center" }); };
 
   const euro = (n) => n.toLocaleString("fr-FR");
-  const grossInterest = Math.round(amount * 0.05);
-  const pfu = Math.round(grossInterest * 0.30);
-  const netTotal = amount + (grossInterest - pfu);
+  const netInterest = Math.round(amount * 0.05);
+  const netTotal = amount + netInterest;
 
   return (
     <div className="min-h-screen bg-[#EEF0F7] font-['Manrope'] text-[#0B1B3A]">
@@ -370,10 +369,10 @@ export default function LivretLanding() {
               <span className="h-2 w-2 rounded-full bg-[#FF6B3D]" /> COMPTE RÉMUNÉRÉ — SUPER LIVRET
             </p>
             <h1 className="font-['Bricolage_Grotesque'] text-4xl font-extrabold leading-[1.05] text-white sm:text-5xl">
-              Un compte rémunéré à <span className="text-[#FF6B3D]">5 % brut garanti</span>, pour faire vraiment travailler votre épargne
+              Un compte rémunéré à <span className="text-[#FF6B3D]">5 % net garanti</span>, pour faire vraiment travailler votre épargne
             </h1>
             <p className="mt-6 max-w-xl text-base text-white/70 sm:text-lg leading-relaxed">
-              Le Super Livret est un placement financier sans risque : capital garanti à 100 %, aucun frais de gestion, et un taux boosté à 5 % brut pendant 12 mois, dans la limite de 75 000 € par titulaire. Vos fonds restent disponibles à tout moment.
+              Le Super Livret est un placement financier sans risque : capital garanti à 100 %, aucun frais de gestion, et un taux boosté à 5 % net pendant 12 mois, dans la limite de 75 000 € par titulaire. Vos fonds restent disponibles à tout moment.
             </p>
             <div className="mt-9 grid grid-cols-3 gap-6 border-t border-white/10 pt-7">
               <Stat value="5%" label="garanti 12 mois" />
@@ -406,7 +405,7 @@ export default function LivretLanding() {
               <p className="text-sm font-bold uppercase tracking-wider text-[#64748B]">Livret A</p>
               <div className="mt-4 flex items-end gap-2">
                 <span className="font-['Bricolage_Grotesque'] text-5xl font-extrabold text-[#0B1B3A]">1,70%</span>
-                <span className="mb-2 text-sm text-[#64748B]">brut / an*</span>
+                <span className="mb-2 text-sm text-[#64748B]">net / an*</span>
               </div>
               <p className="mt-1 text-sm text-[#64748B]">Taux en vigueur en 2026</p>
               <ul className="mt-7 space-y-4">
@@ -414,7 +413,7 @@ export default function LivretLanding() {
                   { label: "Versement libre", ok: true },
                   { label: "Disponible à tout moment", ok: true },
                   { label: "Fonds garantis", ok: true },
-                  { label: "Taux boosté à 5 % brut", ok: false },
+                  { label: "Taux boosté à 5 % net", ok: false },
                 ].map((row) => (
                   <li key={row.label} className="flex items-center gap-3">
                     {row.ok
@@ -432,11 +431,11 @@ export default function LivretLanding() {
               <p className="text-sm font-bold uppercase tracking-wider text-[#FF6B3D]">Super Livret</p>
               <div className="mt-4 flex items-end gap-2">
                 <span className="font-['Bricolage_Grotesque'] text-5xl font-extrabold text-white">5%</span>
-                <span className="mb-2 text-sm text-white/60">brut / an**</span>
+                <span className="mb-2 text-sm text-white/60">net / an**</span>
               </div>
               <p className="mt-1 text-sm text-white/60">Garanti 12 mois, jusqu'à 75 000 €</p>
               <ul className="mt-7 space-y-4">
-                {["Versement libre", "Disponible à tout moment", "Fonds garantis", "Taux boosté à 5 % brut"].map((label) => (
+                {["Versement libre", "Disponible à tout moment", "Fonds garantis", "Taux boosté à 5 % net"].map((label) => (
                   <li key={label} className="flex items-center gap-3">
                     <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#FF6B3D]"><Check className="h-4 w-4 text-white" strokeWidth={3} /></span>
                     <span className="font-['Manrope'] font-medium text-white">{label}</span>
@@ -449,7 +448,7 @@ export default function LivretLanding() {
             </div>
           </motion.div>
 
-          <p className="mx-auto mt-8 max-w-3xl text-center text-xs text-[#64748B]">*Taux du Livret A en vigueur (source : Banque de France). **Taux annuel brut garanti pendant 12 mois sur le Super Livret, hors fiscalité applicable, dans la limite de 75 000 €.</p>
+          <p className="mx-auto mt-8 max-w-3xl text-center text-xs text-[#64748B]">*Taux du Livret A en vigueur (source : Banque de France). **Taux annuel net garanti pendant 12 mois sur le Super Livret, dans la limite de 75 000 €.</p>
         </div>
       </section>
 
@@ -464,7 +463,7 @@ export default function LivretLanding() {
         <div className="mt-12 grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
           <Feature icon={Clock} title="0 frais" text="Aucuns frais d'entrée, de gestion ou de sortie sur votre Super Livret." />
           <Feature icon={ShieldCheck} title="Capital garanti à 100%" text="Votre épargne est intégralement protégée, sans exposition aux marchés financiers." />
-          <Feature icon={TrendingUp} title="Taux boosté à 5% brut" text="Un rendement garanti pendant 12 mois, dans la limite de 75 000 € versés." />
+          <Feature icon={TrendingUp} title="Taux boosté à 5% net" text="Un rendement garanti pendant 12 mois, dans la limite de 75 000 € versés." />
           <Feature icon={CreditCard} title="Argent disponible à tout moment" text="Aucun blocage : retirez vos fonds quand vous le souhaitez, sans pénalité." />
         </div>
       </section>
@@ -474,7 +473,7 @@ export default function LivretLanding() {
         <motion.div {...fade} className="text-center">
           <p className="mb-3 text-sm font-semibold tracking-widest text-[#FF6B3D]">● SIMULATEUR</p>
           <h2 className="font-['Bricolage_Grotesque'] text-3xl font-extrabold leading-tight text-[#0B1B3A] sm:text-4xl">Estimez les intérêts de votre placement financier</h2>
-          <p className="mx-auto mt-5 max-w-2xl text-[#64748B] leading-relaxed">Simulation basée sur le taux boosté de 5 % brut garanti pendant 12 mois, dans la limite de 75 000 €.</p>
+          <p className="mx-auto mt-5 max-w-2xl text-[#64748B] leading-relaxed">Simulation basée sur le taux boosté de 5 % net garanti pendant 12 mois, dans la limite de 75 000 €.</p>
         </motion.div>
 
         <motion.div {...fade} className="mx-auto mt-10 max-w-2xl rounded-3xl bg-white p-7 shadow-[0_10px_40px_-15px_rgba(11,27,58,0.2)] sm:p-9" data-testid="livret-simulateur">
@@ -490,19 +489,19 @@ export default function LivretLanding() {
           />
           <div className="mt-8 rounded-2xl bg-[#F4F5FA] p-6">
             <div className="flex items-center justify-between border-b border-dashed border-[#0B1B3A]/15 py-3">
-              <span className="text-[#64748B]">Intérêts bruts (12 mois)</span>
-              <span className="font-['Bricolage_Grotesque'] text-lg font-extrabold text-[#0B1B3A]">{euro(grossInterest)} €</span>
+              <span className="text-[#64748B]">Montant placé</span>
+              <span className="font-['Bricolage_Grotesque'] text-lg font-extrabold text-[#0B1B3A]">{euro(amount)} €</span>
             </div>
             <div className="flex items-center justify-between border-b border-dashed border-[#0B1B3A]/15 py-3">
-              <span className="text-[#64748B]">Prélèvement forfaitaire unique (30%)</span>
-              <span className="font-['Bricolage_Grotesque'] text-lg font-extrabold text-[#0B1B3A]">{euro(pfu)} €</span>
+              <span className="text-[#64748B]">Intérêts nets (12 mois)</span>
+              <span className="font-['Bricolage_Grotesque'] text-lg font-extrabold text-[#0B1B3A]" data-testid="livret-sim-interest">+{euro(netInterest)} €</span>
             </div>
             <div className="flex items-center justify-between py-3">
               <span className="font-semibold text-[#0B1B3A]">Capital + intérêts nets estimés</span>
               <span className="font-['Bricolage_Grotesque'] text-xl font-extrabold text-[#FF6B3D]" data-testid="livret-sim-net">{euro(netTotal)} €</span>
             </div>
           </div>
-          <p className="mt-4 text-xs text-[#64748B]">Simulation non contractuelle sur une durée de 12 mois, réalisée à titre indicatif à partir du taux de 5 % brut garanti.</p>
+          <p className="mt-4 text-xs text-[#64748B]">Simulation non contractuelle sur une durée de 12 mois, réalisée à titre indicatif à partir du taux de 5 % net garanti.</p>
         </motion.div>
       </section>
 

@@ -16,7 +16,7 @@ LIVRET_CONTENT["offer"].update({
     "title": "COMPTE RÉMUNÉRÉ — SUPER LIVRET",
     "product_name": "Super Livret",
     "rate": "5 %",
-    "rate_label": "brut garanti 12 mois",
+    "rate_label": "net garanti 12 mois",
     "rate_visible": True,
 })
 LIVRET_CONTENT["form_texts"].update({
