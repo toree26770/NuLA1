@@ -1,0 +1,25 @@
+{
+  "summary": "Full E2E validation of the NEW third site 'Super Livret — Compte rémunéré' (collections livret_*, routes /api/livret/*) plus isolation + non-regression on Claude and Défense. Backend: 34/34 pytest passed in /app/backend/tests/test_livret.py covering public (content/form/pixels/track/partial/leads), validation (invalid email/phone, missing consent, honeypot, fast_submit), auth (login/me/cross-session 401), admin (stats, analytics, leads CRUD, partial-leads, campaigns, security-logs, content RW, settings RW, pixels CRUD, exports create+download, form-builder create/save/delete), isolation (lead with marker email created on /api/livret/leads does NOT appear in /api/admin/leads nor /api/defense/admin/leads; Claude/Défense cookies get 401 on /api/livret/admin/*; content payloads distinct), and non-regression (Claude /api/content, /api/form/published, /api/auth/login + Défense /api/defense/content, /api/defense/form/published v1 2 steps ≥6 questions, /api/defense/auth/login all still 200). Frontend: /livret landing loads with title 'Super Livret — Compte rémunéré à 5 % brut garanti', hero stats 5%/100%/0€, step indicator 'Étape 1 sur 2', simulator slider moves amount 10 000€→15 000€ and net 10 350€→15 525€, FAQ accordion opens, bottom form present, and the complete hero form flow (amount→situation→CONTINUER→nom/prénom/téléphone/email/consent→VÉRIFIER MON ÉLIGIBILITÉ) renders the livret-confirmation screen. /livret/admin/login with admin-livret@preview.local / LivretPreview1! redirects to /livret/admin, admin-layout visible, 'Super Livret' branding on sidebar, 5 /api/livret/* calls and 0 cross-scope /api/* leaks observed. /#claude and /defense landings still load with their proper titles (non-regression).",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {"ui_bugs": [], "integration_issues": [], "design_issues": []},
+  "test_report_links": [
+    "/app/backend/tests/test_livret.py",
+    "/app/test_reports/pytest/livret.xml"
+  ],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "livret_db.get_settings() returns a dict that may contain the '_id' key when it hits the second branch (newly-inserted settings): we remove '_id' after insert_one but settings is returned by reference. Low impact but worth cleaning for consistency with defense_db.",
+    "livret_admin_routes.export_custom uses the second Depends(get_current_admin) on top of the router-level dependency — harmless duplication, same as in defense_admin_routes.",
+    "livret_seed.seed_livret_form seeds a single published v1 but never upgrades schema if DEFAULT_CONTENT changes; non-regression safe but means content/offer edits via admin.put /content require a one-off reset after each deploy if the seed shape evolves."
+  ],
+  "updated_files": [
+    "/app/backend/tests/test_livret.py"
+  ],
+  "success_rate": {"backend": "100% (34/34)", "frontend": "100% on tested flows"},
+  "test_credentials": "Livret admin: admin-livret@preview.local / LivretPreview1! | Claude: admin@claude-offre.fr / Claude2026!Admin | Défense: admin@livret-defense.fr / Defense2026!Admin",
+  "seed_data_creation": "During the suite ~5 livret leads + 1 pixel + 1 export batch + partial leads + security logs were created. All cleaned up after the run (livret_leads collection = 0, drafts = 0). livret_settings reset to defaults (rate_limit_per_hour=8, min_submit_seconds=3).",
+  "retest_needed": false,
+  "main_agent_can_self_test": true,
+  "context_for_next_testing_agent": "Super Livret endpoints mirror Défense 1:1 with /livret prefix and livret_* collections. Published form v1 has 2 steps and 7 questions (amount, situation, last_name, first_name, phone, email, consent). Rate limit = 8/h: when running test_livret.py full suite the admin fixture bumps rate_limit_per_hour=10000 and min_submit_seconds=0, and the cleanup script resets them. Isolation is verified via scope-aware /api/livret/admin/leads?q=<email> never leaking into /api/admin/leads or /api/defense/admin/leads. In preview the 3 sites coexist by path (/, /defense, /livret); hostname-based routing (livret.axinvest.app) is only active in production, do NOT test it in preview.",
+  "rca of the issue": "No bugs found."
+}

@@ -391,6 +391,68 @@ export default function LivretLanding() {
         </div>
       </section>
 
+      {/* Comparatif */}
+      <section className="bg-white py-16 lg:py-24">
+        <div className="mx-auto max-w-5xl px-5">
+          <motion.div {...fade} className="text-center">
+            <p className="mb-3 text-sm font-semibold tracking-widest text-[#FF6B3D]">● LIVRET A vs SUPER LIVRET</p>
+            <h2 className="font-['Bricolage_Grotesque'] text-3xl font-extrabold leading-tight text-[#0B1B3A] sm:text-4xl">Comparatif du Livret A et de notre Super Livret</h2>
+            <p className="mx-auto mt-5 max-w-2xl text-[#64748B] leading-relaxed">Le Livret A reste le placement réglementé le plus répandu en France, mais son taux ne suit pas toujours le coût de la vie. Voici comment il se compare au Super Livret.</p>
+          </motion.div>
+
+          <motion.div {...fade} className="mx-auto mt-12 grid max-w-4xl gap-6 md:grid-cols-2" data-testid="livret-comparatif">
+            {/* Livret A */}
+            <div className="rounded-3xl border-2 border-[#0B1B3A]/10 bg-white p-7 sm:p-8">
+              <p className="text-sm font-bold uppercase tracking-wider text-[#64748B]">Livret A</p>
+              <div className="mt-4 flex items-end gap-2">
+                <span className="font-['Bricolage_Grotesque'] text-5xl font-extrabold text-[#0B1B3A]">1,70%</span>
+                <span className="mb-2 text-sm text-[#64748B]">brut / an*</span>
+              </div>
+              <p className="mt-1 text-sm text-[#64748B]">Taux en vigueur en 2026</p>
+              <ul className="mt-7 space-y-4">
+                {[
+                  { label: "Versement libre", ok: true },
+                  { label: "Disponible à tout moment", ok: true },
+                  { label: "Fonds garantis", ok: true },
+                  { label: "Taux boosté à 5 % brut", ok: false },
+                ].map((row) => (
+                  <li key={row.label} className="flex items-center gap-3">
+                    {row.ok
+                      ? <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#16A34A]/10"><Check className="h-4 w-4 text-[#16A34A]" strokeWidth={3} /></span>
+                      : <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#0B1B3A]/5 text-[#0B1B3A]/30 font-bold">—</span>}
+                    <span className={`font-['Manrope'] ${row.ok ? "text-[#0B1B3A]" : "text-[#0B1B3A]/40 line-through"}`}>{row.label}</span>
+                  </li>
+                ))}
+              </ul>
+            </div>
+
+            {/* Super Livret (mis en avant) */}
+            <div className="relative rounded-3xl bg-[#0B1B3A] p-7 shadow-2xl shadow-[#0B1B3A]/25 sm:p-8 md:-mt-4 md:mb-4 ring-2 ring-[#FF6B3D]">
+              <span className="absolute -top-3 right-6 rounded-full bg-[#FF6B3D] px-4 py-1 text-xs font-bold uppercase tracking-wider text-white shadow-lg">Recommandé</span>
+              <p className="text-sm font-bold uppercase tracking-wider text-[#FF6B3D]">Super Livret</p>
+              <div className="mt-4 flex items-end gap-2">
+                <span className="font-['Bricolage_Grotesque'] text-5xl font-extrabold text-white">5%</span>
+                <span className="mb-2 text-sm text-white/60">brut / an**</span>
+              </div>
+              <p className="mt-1 text-sm text-white/60">Garanti 12 mois, jusqu'à 75 000 €</p>
+              <ul className="mt-7 space-y-4">
+                {["Versement libre", "Disponible à tout moment", "Fonds garantis", "Taux boosté à 5 % brut"].map((label) => (
+                  <li key={label} className="flex items-center gap-3">
+                    <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-[#FF6B3D]"><Check className="h-4 w-4 text-white" strokeWidth={3} /></span>
+                    <span className="font-['Manrope'] font-medium text-white">{label}</span>
+                  </li>
+                ))}
+              </ul>
+              <button type="button" data-testid="livret-comparatif-cta" onClick={scrollToForm} className="mt-8 w-full rounded-full bg-[#FF6B3D] px-6 py-3.5 font-bold text-white hover:bg-[#E8542A] transition-colors font-['Manrope'] shadow-lg shadow-[#FF6B3D]/30">
+                Vérifier mon éligibilité
+              </button>
+            </div>
+          </motion.div>
+
+          <p className="mx-auto mt-8 max-w-3xl text-center text-xs text-[#64748B]">*Taux du Livret A en vigueur (source : Banque de France). **Taux annuel brut garanti pendant 12 mois sur le Super Livret, hors fiscalité applicable, dans la limite de 75 000 €.</p>
+        </div>
+      </section>
+
       {/* Pourquoi choisir */}
       <section className="mx-auto max-w-6xl px-5 py-16 lg:py-24">
         <motion.div {...fade} className="mx-auto max-w-2xl text-center">
@@ -404,53 +466,6 @@ export default function LivretLanding() {
           <Feature icon={ShieldCheck} title="Capital garanti à 100%" text="Votre épargne est intégralement protégée, sans exposition aux marchés financiers." />
           <Feature icon={TrendingUp} title="Taux boosté à 5% brut" text="Un rendement garanti pendant 12 mois, dans la limite de 75 000 € versés." />
           <Feature icon={CreditCard} title="Argent disponible à tout moment" text="Aucun blocage : retirez vos fonds quand vous le souhaitez, sans pénalité." />
-        </div>
-
-        {/* Rendement comparison */}
-        <motion.div {...fade} className="mx-auto mt-12 max-w-3xl rounded-3xl bg-[#FDEBE2] p-7 sm:p-9" data-testid="livret-rendement">
-          <div className="flex items-center justify-between gap-4">
-            <span className="font-['Bricolage_Grotesque'] text-lg font-extrabold text-[#0B1B3A]">Rendement</span>
-            <div className="flex items-center gap-3">
-              <div className="rounded-2xl bg-[#0B1B3A] px-5 py-3 text-center text-white">
-                <p className="font-['Bricolage_Grotesque'] text-2xl font-extrabold">1,70%<span className="align-super text-xs">*</span></p>
-                <p className="text-xs text-white/60">en 2026</p>
-              </div>
-              <div className="rounded-2xl bg-[#FF6B3D] px-5 py-3 text-center text-white">
-                <p className="font-['Bricolage_Grotesque'] text-2xl font-extrabold">5%<span className="align-super text-xs">**</span></p>
-                <p className="text-xs text-white/80">en 2026</p>
-              </div>
-            </div>
-          </div>
-          <p className="mt-5 text-sm text-[#64748B]">*Taux du Livret A en vigueur (source : Banque de France). **Taux annuel brut garanti pendant 12 mois sur le Super Livret, hors fiscalité applicable, dans la limite de 75 000 €.</p>
-        </motion.div>
-      </section>
-
-      {/* Comparatif */}
-      <section className="bg-white py-16 lg:py-24">
-        <div className="mx-auto max-w-4xl px-5">
-          <motion.div {...fade} className="text-center">
-            <h2 className="font-['Bricolage_Grotesque'] text-3xl font-extrabold leading-tight text-[#0B1B3A] sm:text-4xl">Comparatif du Livret A et de notre Super Livret</h2>
-            <p className="mx-auto mt-5 max-w-2xl text-[#64748B] leading-relaxed">Le Livret A reste le placement réglementé le plus répandu en France, mais son taux ne suit pas toujours le coût de la vie. Voici comment il se compare au Super Livret.</p>
-          </motion.div>
-
-          <motion.div {...fade} className="mx-auto mt-10 max-w-2xl rounded-3xl bg-[#FDEBE2] p-6 sm:p-8" data-testid="livret-comparatif">
-            <div className="mb-2 flex items-center justify-end gap-3">
-              <span className="rounded-full bg-[#0B1B3A] px-5 py-2 text-sm font-bold text-white">Livret A</span>
-              <span className="rounded-full bg-[#FF6B3D] px-5 py-2 text-sm font-bold text-white">Super Livret</span>
-            </div>
-            {[
-              { label: "Versement libre", a: true, b: true },
-              { label: "Disponible à tout moment", a: true, b: true },
-              { label: "Fonds garantis", a: true, b: true },
-              { label: "Taux boosté à 5 % brut", a: false, b: true },
-            ].map((row) => (
-              <div key={row.label} className="grid grid-cols-[1fr_auto_auto] items-center gap-4 border-t border-[#0B1B3A]/10 py-4">
-                <span className="font-semibold text-[#0B1B3A]">{row.label}</span>
-                <span className="flex w-20 justify-center">{row.a ? <Check className="h-5 w-5 text-[#16A34A]" strokeWidth={3} /> : <span className="text-[#0B1B3A]/30">—</span>}</span>
-                <span className="flex w-20 justify-center">{row.b ? <Check className="h-5 w-5 text-[#16A34A]" strokeWidth={3} /> : <span className="text-[#0B1B3A]/30">—</span>}</span>
-              </div>
-            ))}
-          </motion.div>
         </div>
       </section>
 
