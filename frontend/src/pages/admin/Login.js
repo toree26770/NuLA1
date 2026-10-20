@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { Asterisk, Lock } from "lucide-react";
 import { API, fmtError } from "@/api";
-import { isDefenseHost, DEFENSE_ADMIN_BASE, applyDefenseBranding } from "@/defenseBase";
+import { applyDefenseBranding, applyLivretBranding, siteScope, scopeAdminBase } from "@/defenseBase";
 
 export default function AdminLogin() {
   const [email, setEmail] = useState("");
@@ -10,12 +10,15 @@ export default function AdminLogin() {
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
-  const inDefense = isDefenseHost || (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
-  const adminBase = inDefense ? DEFENSE_ADMIN_BASE : "/admin";
+  const scope = siteScope();
+  const inDefense = scope === "defense";
+  const inLivret = scope === "livret";
+  const adminBase = scopeAdminBase();
 
   useEffect(() => {
     if (inDefense) applyDefenseBranding("Administration — Livret d'Épargne Défense");
-  }, [inDefense]);
+    else if (inLivret) applyLivretBranding("Administration — Super Livret");
+  }, [inDefense, inLivret]);
 
   const submit = async (e) => {
     e.preventDefault();
@@ -38,6 +41,8 @@ export default function AdminLogin() {
         <div className="flex items-center justify-center gap-1 mb-8">
           {inDefense ? (
             <span className="font-display text-3xl font-bold text-[#F8F6F2]">Livret <span className="text-[#C8102E]">Défense</span></span>
+          ) : inLivret ? (
+            <span className="font-display text-3xl font-bold text-[#F8F6F2]">Super <span className="text-[#FF6B3D]">Livret</span></span>
           ) : (
             <>
               <span className="font-display text-3xl font-bold text-[#F8F6F2]">Claude</span>

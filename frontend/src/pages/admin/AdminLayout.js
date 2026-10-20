@@ -6,7 +6,7 @@ import {
 } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { API } from "@/api";
-import { isDefenseHost, DEFENSE_ADMIN_BASE, applyDefenseBranding } from "@/defenseBase";
+import { applyDefenseBranding, applyLivretBranding, siteScope, scopeAdminBase, scopeBrandName } from "@/defenseBase";
 
 const MENU = [
   { path: "", label: "Tableau de bord", icon: LayoutDashboard, end: true, testid: "nav-dashboard" },
@@ -54,17 +54,18 @@ export default function AdminLayout() {
   const [menuOpen, setMenuOpen] = useState(false);
   const navigate = useNavigate();
 
-  const inDefense = isDefenseHost || (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
-  const adminBase = inDefense ? DEFENSE_ADMIN_BASE : "/admin";
-  const brandName = inDefense ? "Défense" : "Claude";
+  const scope = siteScope();
+  const adminBase = scopeAdminBase();
+  const brandName = scopeBrandName();
 
   useEffect(() => {
-    if (inDefense) applyDefenseBranding("Administration — Livret d'Épargne Défense");
+    if (scope === "defense") applyDefenseBranding("Administration — Livret d'Épargne Défense");
+    else if (scope === "livret") applyLivretBranding("Administration — Super Livret");
     API.get("/auth/me")
       .then((res) => setAdmin(res.data))
       .catch(() => navigate(`${adminBase}/login`, { replace: true }))
       .finally(() => setChecked(true));
-  }, [navigate, adminBase, inDefense]);
+  }, [navigate, adminBase, scope]);
 
   const logout = async () => {
     try {

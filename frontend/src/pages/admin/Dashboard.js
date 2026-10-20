@@ -6,7 +6,7 @@ import {
 } from "recharts";
 import { Users, CalendarDays, TrendingUp, UserPlus, Download, CheckCircle2, Copy } from "lucide-react";
 import { API } from "@/api";
-import { isDefenseHost, DEFENSE_ADMIN_BASE } from "@/defenseBase";
+import { scopeAdminBase } from "@/defenseBase";
 
 const PIE_COLORS = { nouveau: "#FF683D", recupere: "#3B82F6", traite: "#10B981", doublon: "#F59E0B", invalide: "#EF4444" };
 const STATUS_FR = { nouveau: "Nouveaux", recupere: "Récupérés", traite: "Traités", doublon: "Doublons", invalide: "Invalides" };
@@ -27,8 +27,7 @@ function StatCard({ label, value, icon: Icon, testid, accent = false }) {
 
 export default function Dashboard() {
   const [stats, setStats] = useState(null);
-  const inDefense = isDefenseHost || (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
-  const adminBase = inDefense ? DEFENSE_ADMIN_BASE : "/admin";
+  const adminBase = scopeAdminBase();
 
   useEffect(() => {
     API.get("/admin/stats").then((r) => setStats(r.data)).catch(() => {});

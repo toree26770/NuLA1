@@ -60,6 +60,20 @@ if [ -n "${DEFENSE_DOMAIN:-}" ]; then
   fi
 fi
 
+echo
+echo -e "${B}Troisième site « Super Livret — Compte rémunéré » (optionnel)${N}"
+echo "Laissez vide si vous ne voulez PAS activer le troisième site."
+read -rp "$(echo -e "     Sous-domaine Super Livret (ex: livret.axinvest.app) : ")" LIVRET_DOMAIN
+if [ -n "${LIVRET_DOMAIN:-}" ]; then
+  read -rp "$(echo -e "     E-mail admin Super Livret [admin@${LIVRET_DOMAIN}] : ")" LIVRET_ADMIN_EMAIL
+  LIVRET_ADMIN_EMAIL=${LIVRET_ADMIN_EMAIL:-admin@${LIVRET_DOMAIN}}
+  read -rp "$(echo -e "     Mot de passe admin Super Livret (laisser vide = généré automatiquement) : ")" LIVRET_ADMIN_PASSWORD
+  if [ -z "${LIVRET_ADMIN_PASSWORD:-}" ]; then
+    LIVRET_ADMIN_PASSWORD="$(openssl rand -base64 12 | tr -d '/+=' | cut -c1-14)Aa1!"
+    GEN_LIV_PWD=1
+  fi
+fi
+
 APP_DIR="/var/www/app"
 JWT_SECRET="$(openssl rand -hex 32)"
 
@@ -71,6 +85,10 @@ echo "   Admin     : $ADMIN_EMAIL"
 if [ -n "${DEFENSE_DOMAIN:-}" ]; then
   echo "   Défense   : https://$DEFENSE_DOMAIN"
   echo "   Admin Déf.: $DEFENSE_ADMIN_EMAIL"
+fi
+if [ -n "${LIVRET_DOMAIN:-}" ]; then
+  echo "   Livret    : https://$LIVRET_DOMAIN"
+  echo "   Admin Liv.: $LIVRET_ADMIN_EMAIL"
 fi
 echo
 read -rp "$(echo -e "${B}Tout est bon ? On lance l'installation ? (o/n) ${N}")" GO
@@ -143,6 +161,7 @@ grep -viE '^(emergentintegrations|litellm)([=<> @]|$)' requirements.txt \
 
 CORS_ORIGINS="https://${DOMAIN}"
 [ -n "${DEFENSE_DOMAIN:-}" ] && CORS_ORIGINS="${CORS_ORIGINS},https://${DEFENSE_DOMAIN}"
+[ -n "${LIVRET_DOMAIN:-}" ] && CORS_ORIGINS="${CORS_ORIGINS},https://${LIVRET_DOMAIN}"
 
 cat > "$APP_DIR/backend/.env" <<EOF
 MONGO_URL=mongodb://localhost:27017
@@ -158,6 +177,13 @@ if [ -n "${DEFENSE_DOMAIN:-}" ]; then
   cat >> "$APP_DIR/backend/.env" <<EOF
 DEFENSE_ADMIN_EMAIL=${DEFENSE_ADMIN_EMAIL}
 DEFENSE_ADMIN_PASSWORD=${DEFENSE_ADMIN_PASSWORD}
+EOF
+fi
+
+if [ -n "${LIVRET_DOMAIN:-}" ]; then
+  cat >> "$APP_DIR/backend/.env" <<EOF
+LIVRET_ADMIN_EMAIL=${LIVRET_ADMIN_EMAIL}
+LIVRET_ADMIN_PASSWORD=${LIVRET_ADMIN_PASSWORD}
 EOF
 fi
 
@@ -191,6 +217,9 @@ EOF
 if [ -n "${DEFENSE_DOMAIN:-}" ]; then
   echo "REACT_APP_DEFENSE_HOST=${DEFENSE_DOMAIN}" >> "$APP_DIR/frontend/.env"
 fi
+if [ -n "${LIVRET_DOMAIN:-}" ]; then
+  echo "REACT_APP_LIVRET_HOST=${LIVRET_DOMAIN}" >> "$APP_DIR/frontend/.env"
+fi
 yarn install --silent
 yarn build
 ok "Site construit"
@@ -211,7 +240,8 @@ ok "Certificat généré"
 # ----------------------------------------------------------------------------
 say "Configuration de Nginx…"
 SERVER_NAMES="${DOMAIN}"
-[ -n "${DEFENSE_DOMAIN:-}" ] && SERVER_NAMES="${DOMAIN} ${DEFENSE_DOMAIN}"
+[ -n "${DEFENSE_DOMAIN:-}" ] && SERVER_NAMES="${SERVER_NAMES} ${DEFENSE_DOMAIN}"
+[ -n "${LIVRET_DOMAIN:-}" ] && SERVER_NAMES="${SERVER_NAMES} ${LIVRET_DOMAIN}"
 cat > /etc/nginx/sites-available/claude <<EOF
 server {
     listen 80;
@@ -283,6 +313,15 @@ if [ -n "${DEFENSE_DOMAIN:-}" ]; then
   echo -e "       Proxy   : ${B}Proxied (nuage orange 🟠)${N}"
   echo
 fi
+if [ -n "${LIVRET_DOMAIN:-}" ]; then
+  echo -e "${B}Pour le troisième site « Super Livret » : AJOUTEZ un enregistrement DNS${N}"
+  echo -e "  Sur Cloudflare → ${B}Add record${N} :"
+  echo -e "       Type    : ${B}A${N}"
+  echo -e "       Name    : ${B}${LIVRET_DOMAIN%%.*}${N}   (le début de ${LIVRET_DOMAIN})"
+  echo -e "       Content : ${B}${SERVER_IP}${N}   (la MÊME IP de ce serveur)"
+  echo -e "       Proxy   : ${B}Proxied (nuage orange 🟠)${N}"
+  echo
+fi
 echo -e "${B}Ensuite, ouvrez :${N} ${C}https://${DOMAIN}${N}"
 echo -e "${B}Administration :${N}  ${C}https://${DOMAIN}/admin${N}"
 echo
@@ -300,6 +339,17 @@ if [ -n "${DEFENSE_DOMAIN:-}" ]; then
   echo -e "   E-mail        : ${B}${DEFENSE_ADMIN_EMAIL}${N}"
   if [ "${GEN_DEF_PWD:-0}" = "1" ]; then
     echo -e "   Mot de passe  : ${B}${DEFENSE_ADMIN_PASSWORD}${N}   ${Y}(notez-le !)${N}"
+  else
+    echo -e "   Mot de passe  : ${B}(celui que vous avez choisi)${N}"
+  fi
+  echo
+fi
+if [ -n "${LIVRET_DOMAIN:-}" ]; then
+  echo -e "${B}Site Super Livret :${N}   ${C}https://${LIVRET_DOMAIN}${N}"
+  echo -e "${B}Admin Super Livret :${N}  ${C}https://${LIVRET_DOMAIN}/admin${N}"
+  echo -e "   E-mail        : ${B}${LIVRET_ADMIN_EMAIL}${N}"
+  if [ "${GEN_LIV_PWD:-0}" = "1" ]; then
+    echo -e "   Mot de passe  : ${B}${LIVRET_ADMIN_PASSWORD}${N}   ${Y}(notez-le !)${N}"
   else
     echo -e "   Mot de passe  : ${B}(celui que vous avez choisi)${N}"
   fi

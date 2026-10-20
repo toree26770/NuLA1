@@ -100,6 +100,25 @@ Le 2ᵉ site tourne sur **le même serveur** et la **même base** (données 100 
 
 ---
 
+## 🟧 ÉTAPE 6 — Activer le 3ᵉ site « Super Livret » (livret.axinvest.app)
+
+Même principe que le site Défense : **même serveur, même base** (données 100 % séparées, collections `livret_*`), juste **un enregistrement DNS en plus**.
+
+1. **Cloudflare → votre domaine → DNS → Add record** :
+   | Champ | Valeur |
+   |-------|--------|
+   | **Type** | `A` |
+   | **Name** | `livret`  ← donnera `livret.axinvest.app` |
+   | **IPv4 address** | la **MÊME IP de votre VPS** |
+   | **Proxy status** | 🟠 **Proxied** (nuage orange) |
+2. Cliquez **Save**.
+3. Lors de l'installation (ou de la mise à jour), à la question **« Sous-domaine Super Livret »**, tapez `livret.axinvest.app`, puis l'e-mail et le mot de passe de l'admin Super Livret.
+4. Ouvrez :
+   - **https://livret.axinvest.app** → la landing Super Livret 🔒
+   - **https://livret.axinvest.app/admin** → son administration (identique aux autres, données séparées).
+
+---
+
 ## 🔄 Mettre à jour plus tard (quand vous modifiez l'app)
 
 Après avoir refait « Save to GitHub » dans Emergent, reconnectez-vous au VPS (Étape 2) et relancez **exactement la même commande** (Étape 3). Le script récupère le nouveau code, reconstruit et redémarre tout. C'est tout. ✅

@@ -1,12 +1,12 @@
 import axios from "axios";
-import { isDefenseHost } from "@/defenseBase";
+import { isDefenseHost, isLivretHost, scopeApiPrefix } from "@/defenseBase";
 
-// Sur le sous-domaine Défense (ex. militaire.axinvest.app), le site et son
-// backend sont servis par la MÊME origine : on appelle donc "/api" sur cette
-// origine (même serveur) au lieu du domaine Claude compilé en dur. Partout
-// ailleurs (Preview, domaine Claude), on utilise REACT_APP_BACKEND_URL.
+// Sur un sous-domaine dédié (Défense ou Super Livret), le site et son backend
+// sont servis par la MÊME origine : on appelle donc "/api" sur cette origine
+// (même serveur) au lieu du domaine Claude compilé en dur. Partout ailleurs
+// (Preview, domaine Claude), on utilise REACT_APP_BACKEND_URL.
 const BACKEND_BASE =
-  isDefenseHost && typeof window !== "undefined"
+  (isDefenseHost || isLivretHost) && typeof window !== "undefined"
     ? window.location.origin
     : process.env.REACT_APP_BACKEND_URL;
 
@@ -15,16 +15,14 @@ export const API = axios.create({
   withCredentials: true,
 });
 
-// Route automatiquement les appels admin/auth vers l'espace Défense (/defense/...)
-// lorsque l'on se trouve sur le sous-domaine Défense ou sous /defense.
+// Route automatiquement les appels admin/auth vers l'espace du site courant
+// (/defense/... ou /livret/...) selon le sous-domaine ou le chemin.
 API.interceptors.request.use((config) => {
   try {
     const url = config.url || "";
-    const inDefense =
-      isDefenseHost ||
-      (typeof window !== "undefined" && window.location.pathname.startsWith("/defense"));
-    if (inDefense && (url.startsWith("/admin") || url.startsWith("/auth"))) {
-      config.url = "/defense" + url;
+    const prefix = scopeApiPrefix();
+    if (prefix && (url.startsWith("/admin") || url.startsWith("/auth"))) {
+      config.url = prefix + url;
     }
   } catch {
     /* no-op */
@@ -59,6 +57,14 @@ export function trackEvent(event, { step_index = null, meta = {} } = {}) {
 export function trackDefense(event, { step_index = null, meta = {} } = {}) {
   try {
     API.post("/defense/track", { session_id: getSessionId(), event, step_index, meta }).catch(() => {});
+  } catch {
+    /* ne jamais bloquer l'UI pour du suivi */
+  }
+}
+
+export function trackLivret(event, { step_index = null, meta = {} } = {}) {
+  try {
+    API.post("/livret/track", { session_id: getSessionId(), event, step_index, meta }).catch(() => {});
   } catch {
     /* ne jamais bloquer l'UI pour du suivi */
   }
