@@ -59,12 +59,21 @@ async def get_stats():
 
 
 @router.get("/analytics")
-async def get_analytics(days: int = Query(30, ge=1, le=365)):
-    """Statistiques d'audience : visites, formulaires commencés, envoyés, abandons, entonnoir."""
+async def get_analytics(days: int = Query(30, ge=1, le=365), campaign: str = Query("")):
+    """Statistiques d'audience : visites, formulaires commencés, envoyés, abandons, entonnoir.
+    Si `campaign` est fourni, les statistiques sont filtrées sur cette campagne."""
     now = datetime.now(timezone.utc)
     start = (now - timedelta(days=days)).isoformat()
     ev = db.livret_analytics_events
     base = {"created_at": {"$gte": start}}
+    leads_q = {"created_at": {"$gte": start}, "status": {"$ne": "doublon"}}
+    camp = (campaign or "").strip()
+    if camp == "(direct)":
+        base["utm_campaign"] = {"$in": ["", None]}
+        leads_q["utm_campaign"] = {"$in": ["", None]}
+    elif camp:
+        base["utm_campaign"] = camp
+        leads_q["utm_campaign"] = camp
 
     async def distinct_sessions(match):
         res = await ev.aggregate([
@@ -78,7 +87,7 @@ async def get_analytics(days: int = Query(30, ge=1, le=365)):
     unique_visitors = await distinct_sessions({**base, "type": "page_view"})
     form_starts = await distinct_sessions({**base, "type": "form_start"})
     submissions = await distinct_sessions({**base, "type": "form_submit"})
-    leads_count = await db.livret_leads.count_documents({"created_at": {"$gte": start}, "status": {"$ne": "doublon"}})
+    leads_count = await db.livret_leads.count_documents(leads_q)
 
     abandons = max(form_starts - submissions, 0)
     conversion_rate = round(submissions / unique_visitors * 100, 1) if unique_visitors else 0.0

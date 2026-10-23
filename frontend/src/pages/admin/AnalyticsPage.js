@@ -28,6 +28,8 @@ function StatCard({ label, value, hint, icon: Icon, testid, accent = false }) {
 
 export default function AnalyticsPage() {
   const [days, setDays] = useState(30);
+  const [campaign, setCampaign] = useState("");
+  const [campaigns, setCampaigns] = useState([]);
   const [data, setData] = useState(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(false);
@@ -35,7 +37,7 @@ export default function AnalyticsPage() {
   const load = () => {
     setLoading(true);
     setError(false);
-    API.get(`/admin/analytics?days=${days}`)
+    API.get(`/admin/analytics?days=${days}&campaign=${encodeURIComponent(campaign)}`)
       .then((r) => setData(r.data))
       .catch(() => setError(true))
       .finally(() => setLoading(false));
@@ -44,7 +46,13 @@ export default function AnalyticsPage() {
   useEffect(() => {
     load();
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [days]);
+  }, [days, campaign]);
+
+  useEffect(() => {
+    API.get("/admin/campaigns")
+      .then((r) => setCampaigns((r.data.campaigns || []).map((c) => c.campaign)))
+      .catch(() => setCampaigns([]));
+  }, []);
 
   if (loading && !data) {
     return <div className="h-64 animate-pulse rounded-2xl bg-gray-100" data-testid="analytics-loading" />;
@@ -80,22 +88,39 @@ export default function AnalyticsPage() {
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display text-2xl md:text-3xl font-bold text-[#0B111B]">Statistiques d'audience</h1>
-          <p className="text-sm text-gray-500 mt-1">Visites, formulaires commencés, envoyés et abandons.</p>
+          <p className="text-sm text-gray-500 mt-1">
+            {campaign
+              ? <>Campagne : <span className="font-semibold text-[#FF683D]">{campaign}</span></>
+              : "Toutes campagnes confondues — visites, formulaires commencés, envoyés et abandons."}
+          </p>
         </div>
-        <div className="flex gap-1.5 rounded-xl border border-gray-200 bg-white p-1" data-testid="range-selector">
-          {RANGES.map((r) => (
-            <button
-              key={r.v}
-              type="button"
-              data-testid={`range-${r.v}`}
-              onClick={() => setDays(r.v)}
-              className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-colors ${
-                days === r.v ? "bg-[#FF683D] text-white" : "text-gray-500 hover:bg-gray-50"
-              }`}
-            >
-              {r.label}
-            </button>
-          ))}
+        <div className="flex items-center gap-2 flex-wrap">
+          <select
+            data-testid="analytics-campaign-select"
+            value={campaign}
+            onChange={(e) => setCampaign(e.target.value)}
+            className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:ring-2 focus:ring-[#FF683D] cursor-pointer"
+          >
+            <option value="">Toutes les campagnes</option>
+            {campaigns.map((c) => (
+              <option key={c} value={c}>{c === "(direct)" ? "(direct / sans campagne)" : c}</option>
+            ))}
+          </select>
+          <div className="flex gap-1.5 rounded-xl border border-gray-200 bg-white p-1" data-testid="range-selector">
+            {RANGES.map((r) => (
+              <button
+                key={r.v}
+                type="button"
+                data-testid={`range-${r.v}`}
+                onClick={() => setDays(r.v)}
+                className={`rounded-lg px-3.5 py-1.5 text-sm font-semibold transition-colors ${
+                  days === r.v ? "bg-[#FF683D] text-white" : "text-gray-500 hover:bg-gray-50"
+                }`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
