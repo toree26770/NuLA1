@@ -89,7 +89,7 @@ async def track_event(body: TrackEvent, request: Request):
         "ip": request.client.host if request.client else "unknown",
         "utm_source": clean_text(meta.get("utm_source"), 120) or "",
         "utm_medium": clean_text(meta.get("utm_medium"), 120) or "",
-        "utm_campaign": clean_text(meta.get("utm_campaign"), 120) or "",
+        "utm_campaign": clean_text(meta.get("utm_campaign"), 120) or re.sub(r"[^a-z0-9_-]", "", clean_text(meta.get("campaign"), 64).lower()),
         "fbclid": clean_text(meta.get("fbclid"), 200) or "",
         "user_agent": clean_text(request.headers.get("user-agent") or "", 300),
     }
@@ -141,7 +141,7 @@ async def save_partial_lead(body: PartialLeadBody, request: Request):
                 "updated_at": now,
                 "utm_source": clean_text(meta.get("utm_source"), 200),
                 "utm_medium": clean_text(meta.get("utm_medium"), 200),
-                "utm_campaign": clean_text(meta.get("utm_campaign"), 200),
+                "utm_campaign": clean_text(meta.get("utm_campaign"), 200) or re.sub(r"[^a-z0-9_-]", "", clean_text(meta.get("campaign"), 64).lower()),
                 "fbclid": clean_text(meta.get("fbclid"), 300),
             },
             "$setOnInsert": {
@@ -325,7 +325,7 @@ async def submit_lead(body: LeadSubmit, request: Request):
         "form_version_id": version["id"],
         "utm_source": clean_text(meta.get("utm_source"), 200),
         "utm_medium": clean_text(meta.get("utm_medium"), 200),
-        "utm_campaign": clean_text(meta.get("utm_campaign"), 200),
+        "utm_campaign": clean_text(meta.get("utm_campaign"), 200) or re.sub(r"[^a-z0-9_-]", "", clean_text(meta.get("campaign"), 64).lower()),
         "utm_content": clean_text(meta.get("utm_content"), 200),
         "utm_term": clean_text(meta.get("utm_term"), 200),
         "fbclid": clean_text(meta.get("fbclid"), 300),

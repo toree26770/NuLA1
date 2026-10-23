@@ -10,7 +10,7 @@ import os
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
 
-from database import client, ensure_indexes
+from database import client, db, ensure_indexes
 from auth import router as auth_router, seed_admin
 from public_routes import router as public_router
 from admin_routes import router as admin_router
@@ -76,6 +76,17 @@ async def startup():
     await seed_content()
     await seed_form()
     await seed_pixels()
+    # Migration ponctuelle : réparer les leads historiques dont la campagne
+    # (?campaign=) était stockée dans "campaign" mais pas dans "utm_campaign".
+    for coll in ("defense_leads", "livret_leads"):
+        try:
+            await db[coll].update_many(
+                {"campaign": {"$nin": ["", None]},
+                 "$or": [{"utm_campaign": ""}, {"utm_campaign": {"$exists": False}}, {"utm_campaign": None}]},
+                [{"$set": {"utm_campaign": "$campaign"}}],
+            )
+        except Exception as exc:  # pragma: no cover
+            logger.warning("Backfill utm_campaign %s: %s", coll, exc)
     logger.info("Initialisation terminée : admin, contenu et formulaire prêts")
 
 
