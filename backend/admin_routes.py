@@ -12,6 +12,14 @@ router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_cu
 
 LEAD_STATUSES = ["nouveau", "recupere", "traite", "doublon", "invalide"]
 
+# Normalise la campagne pour les regroupements : null, champ absent OU chaîne vide -> "(direct)".
+CAMPAIGN_LABEL = {
+    "$let": {
+        "vars": {"c": {"$ifNull": ["$utm_campaign", ""]}},
+        "in": {"$cond": [{"$eq": ["$$c", ""]}, "(direct)", "$$c"]},
+    }
+}
+
 
 # ---------- Statistiques ----------
 
@@ -38,7 +46,7 @@ async def get_stats():
     ]).to_list(40)
 
     by_campaign = await db.leads.aggregate([
-        {"$group": {"_id": {"$ifNull": ["$utm_campaign", "(direct)"]}, "count": {"$sum": 1}}},
+        {"$group": {"_id": CAMPAIGN_LABEL, "count": {"$sum": 1}}},
         {"$sort": {"count": -1}},
         {"$limit": 10},
     ]).to_list(10)
@@ -254,7 +262,7 @@ async def bulk_delete_leads(body: BulkDelete):
 async def get_campaigns():
     rows = await db.leads.aggregate([
         {"$group": {
-            "_id": {"$ifNull": ["$utm_campaign", "(direct)"]},
+            "_id": CAMPAIGN_LABEL,
             "total": {"$sum": 1},
             "nouveau": {"$sum": {"$cond": [{"$eq": ["$status", "nouveau"]}, 1, 0]}},
             "recupere": {"$sum": {"$cond": [{"$eq": ["$status", "recupere"]}, 1, 0]}},
@@ -266,7 +274,7 @@ async def get_campaigns():
     ]).to_list(100)
     amounts = await db.leads.aggregate([
         {"$match": {"amount_range": {"$ne": ""}}},
-        {"$group": {"_id": {"campaign": {"$ifNull": ["$utm_campaign", "(direct)"]}, "amount": "$amount_range"}, "count": {"$sum": 1}}},
+        {"$group": {"_id": {"campaign": CAMPAIGN_LABEL, "amount": "$amount_range"}, "count": {"$sum": 1}}},
     ]).to_list(500)
     amount_map = {}
     for a in amounts:

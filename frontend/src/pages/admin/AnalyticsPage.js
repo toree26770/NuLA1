@@ -49,9 +49,13 @@ export default function AnalyticsPage() {
   }, [days, campaign]);
 
   useEffect(() => {
-    API.get("/admin/campaigns")
-      .then((r) => setCampaigns((r.data.campaigns || []).map((c) => c.campaign)))
-      .catch(() => setCampaigns([]));
+    Promise.all([
+      API.get("/admin/campaigns").then((r) => (r.data.campaigns || []).map((c) => c.campaign)).catch(() => []),
+      API.get("/admin/pixels").then((r) => (r.data.items || []).flatMap((p) => p.campaigns || [])).catch(() => []),
+    ]).then(([fromLeads, fromPixels]) => {
+      const set = new Set([...fromLeads, ...fromPixels].map((c) => (c || "").trim()).filter(Boolean));
+      setCampaigns([...set].sort());
+    });
   }, []);
 
   if (loading && !data) {
