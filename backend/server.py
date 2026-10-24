@@ -87,6 +87,28 @@ async def startup():
             )
         except Exception as exc:  # pragma: no cover
             logger.warning("Backfill utm_campaign %s: %s", coll, exc)
+    # Migration ponctuelle : rattacher la campagne aux événements d'audience
+    # (form_start/step_view/form_submit) enregistrés sans campagne, en se basant
+    # sur la visite (page_view) de la MÊME session. Purement additif et idempotent :
+    # ne remplit que les campagnes vides, ne supprime/écrase jamais de donnée existante.
+    for coll in ("analytics_events", "defense_analytics_events", "livret_analytics_events"):
+        try:
+            pipeline = [
+                {"$match": {"type": "page_view", "utm_campaign": {"$nin": ["", None]}}},
+                {"$group": {"_id": "$session_id", "campaign": {"$first": "$utm_campaign"}}},
+            ]
+            async for row in db[coll].aggregate(pipeline):
+                sid, camp = row.get("_id"), row.get("campaign")
+                if not sid or not camp:
+                    continue
+                await db[coll].update_many(
+                    {"session_id": sid,
+                     "type": {"$in": ["form_start", "step_view", "form_submit"]},
+                     "$or": [{"utm_campaign": ""}, {"utm_campaign": {"$exists": False}}, {"utm_campaign": None}]},
+                    {"$set": {"utm_campaign": camp}},
+                )
+        except Exception as exc:  # pragma: no cover
+            logger.warning("Backfill analytics campaign %s: %s", coll, exc)
     logger.info("Initialisation terminée : admin, contenu et formulaire prêts")
 
 

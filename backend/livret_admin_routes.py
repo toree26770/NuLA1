@@ -190,19 +190,31 @@ async def list_leads(
 
 
 @router.get("/partial-leads")
-async def list_partial_leads(page: int = Query(1, ge=1), limit: int = Query(25, ge=1, le=200)):
+async def list_partial_leads(
+    page: int = Query(1, ge=1),
+    limit: int = Query(25, ge=1, le=200),
+    recovered: str = Query(""),
+):
     """Leads incomplets : prospects ayant commencé mais pas envoyé le formulaire."""
-    query = {"completed": {"$ne": True}}
+    base = {"completed": {"$ne": True}}
+    show_recovered = recovered in ("1", "true", "yes")
+    query = {**base, "recovered": True} if show_recovered else {**base, "recovered": {"$ne": True}}
     total = await db.livret_partial_leads.count_documents(query)
+    pending_total = await db.livret_partial_leads.count_documents({**base, "recovered": {"$ne": True}})
+    recovered_total = await db.livret_partial_leads.count_documents({**base, "recovered": True})
     items = await db.livret_partial_leads.find(query, {"_id": 0}).sort("updated_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
-    return {"items": items, "total": total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
+    return {"items": items, "total": total, "pending_total": pending_total, "recovered_total": recovered_total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
 
 
 @router.get("/partial-leads/export.csv")
 async def export_partial_leads():
-    query = {"completed": {"$ne": True}}
+    # On exporte les leads incomplets NON encore récupérés, puis on les marque
+    # « récupérés » : ils quittent la liste à traiter (comme les nouveaux leads).
+    query = {"completed": {"$ne": True}, "recovered": {"$ne": True}}
     items = await db.livret_partial_leads.find(query, {"_id": 0}).sort("updated_at", -1).to_list(100000)
     csv_bytes = build_partial_leads_csv(items)
+    if items:
+        await db.livret_partial_leads.update_many(query, {"$set": {"recovered": True, "recovered_at": now_iso()}})
     return Response(
         content=csv_bytes,
         media_type="text/csv; charset=utf-8",

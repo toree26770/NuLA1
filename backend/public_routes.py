@@ -142,6 +142,8 @@ async def save_partial_lead(body: PartialLeadBody, request: Request):
                 "utm_medium": clean_text(meta.get("utm_medium"), 200),
                 "utm_campaign": clean_text(meta.get("utm_campaign"), 200),
                 "fbclid": clean_text(meta.get("fbclid"), 300),
+                "recovered": False,
+                "recovered_at": None,
             },
             "$setOnInsert": {
                 "id": new_id(),
