@@ -6,6 +6,7 @@ import { Eye, Users, PencilLine, CheckCircle2, LogOut, TrendingUp } from "lucide
 import { API } from "@/api";
 
 const RANGES = [
+  { v: 1, label: "1 jour" },
   { v: 7, label: "7 jours" },
   { v: 30, label: "30 jours" },
   { v: 90, label: "90 jours" },
