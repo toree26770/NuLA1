@@ -46,9 +46,25 @@ export function getSessionId() {
   }
 }
 
+// Récupère la campagne stockée pour un site afin de l'attacher à CHAQUE événement
+// (page_view, form_start, step_view, form_submit) pour une attribution cohérente.
+function campaignFor(key) {
+  try {
+    return localStorage.getItem(key) || "";
+  } catch {
+    return "";
+  }
+}
+
+function withCampaign(meta, key) {
+  // La campagne déjà présente dans meta a priorité ; sinon on récupère celle du localStorage.
+  return { campaign: campaignFor(key), ...meta };
+}
+
 export function trackEvent(event, { step_index = null, meta = {} } = {}) {
   try {
-    API.post("/track", { session_id: getSessionId(), event, step_index, meta }).catch(() => {});
+    const m = withCampaign(meta, "claude_campaign");
+    API.post("/track", { session_id: getSessionId(), event, step_index, meta: m }).catch(() => {});
   } catch {
     /* ne jamais bloquer l'UI pour du suivi */
   }
@@ -56,7 +72,8 @@ export function trackEvent(event, { step_index = null, meta = {} } = {}) {
 
 export function trackDefense(event, { step_index = null, meta = {} } = {}) {
   try {
-    API.post("/defense/track", { session_id: getSessionId(), event, step_index, meta }).catch(() => {});
+    const m = withCampaign(meta, "defense_campaign");
+    API.post("/defense/track", { session_id: getSessionId(), event, step_index, meta: m }).catch(() => {});
   } catch {
     /* ne jamais bloquer l'UI pour du suivi */
   }
@@ -64,7 +81,8 @@ export function trackDefense(event, { step_index = null, meta = {} } = {}) {
 
 export function trackLivret(event, { step_index = null, meta = {} } = {}) {
   try {
-    API.post("/livret/track", { session_id: getSessionId(), event, step_index, meta }).catch(() => {});
+    const m = withCampaign(meta, "livret_campaign");
+    API.post("/livret/track", { session_id: getSessionId(), event, step_index, meta: m }).catch(() => {});
   } catch {
     /* ne jamais bloquer l'UI pour du suivi */
   }
