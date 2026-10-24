@@ -4,8 +4,10 @@ from pathlib import Path
 ROOT_DIR = Path(__file__).parent
 load_dotenv(ROOT_DIR / ".env")
 
+import asyncio
 import logging
 import os
+from datetime import datetime, timezone
 
 from fastapi import FastAPI, APIRouter
 from starlette.middleware.cors import CORSMiddleware
@@ -76,40 +78,58 @@ async def startup():
     await seed_content()
     await seed_form()
     await seed_pixels()
-    # Migration ponctuelle : réparer les leads historiques dont la campagne
-    # (?campaign=) était stockée dans "campaign" mais pas dans "utm_campaign".
-    for coll in ("defense_leads", "livret_leads"):
-        try:
-            await db[coll].update_many(
-                {"campaign": {"$nin": ["", None]},
-                 "$or": [{"utm_campaign": ""}, {"utm_campaign": {"$exists": False}}, {"utm_campaign": None}]},
-                [{"$set": {"utm_campaign": "$campaign"}}],
-            )
-        except Exception as exc:  # pragma: no cover
-            logger.warning("Backfill utm_campaign %s: %s", coll, exc)
-    # Migration ponctuelle : rattacher la campagne aux événements d'audience
-    # (form_start/step_view/form_submit) enregistrés sans campagne, en se basant
-    # sur la visite (page_view) de la MÊME session. Purement additif et idempotent :
-    # ne remplit que les campagnes vides, ne supprime/écrase jamais de donnée existante.
-    for coll in ("analytics_events", "defense_analytics_events", "livret_analytics_events"):
-        try:
-            pipeline = [
-                {"$match": {"type": "page_view", "utm_campaign": {"$nin": ["", None]}}},
-                {"$group": {"_id": "$session_id", "campaign": {"$first": "$utm_campaign"}}},
-            ]
-            async for row in db[coll].aggregate(pipeline):
-                sid, camp = row.get("_id"), row.get("campaign")
-                if not sid or not camp:
-                    continue
-                await db[coll].update_many(
-                    {"session_id": sid,
-                     "type": {"$in": ["form_start", "step_view", "form_submit"]},
-                     "$or": [{"utm_campaign": ""}, {"utm_campaign": {"$exists": False}}, {"utm_campaign": None}]},
-                    {"$set": {"utm_campaign": camp}},
-                )
-        except Exception as exc:  # pragma: no cover
-            logger.warning("Backfill analytics campaign %s: %s", coll, exc)
+    # Les migrations de rattrapage tournent EN ARRIÈRE-PLAN pour ne JAMAIS bloquer
+    # le démarrage du serveur (sinon, sur une grosse base, le backend ne répondrait
+    # pas pendant la migration -> erreur 502/520 côté proxy).
+    asyncio.create_task(run_backfills())
     logger.info("Initialisation terminée : admin, contenu et formulaire prêts")
+
+
+async def run_backfills():
+    """Migrations ponctuelles, additives et idempotentes, exécutées UNE SEULE fois
+    par base (flag en collection `migrations`). Ne supprime/écrase jamais de donnée."""
+    try:
+        flag = await db.migrations.find_one({"_id": "campaign_backfill_v1"})
+        if flag:
+            return
+        # 1) Leads historiques : recopier "campaign" dans "utm_campaign" si vide.
+        for coll in ("defense_leads", "livret_leads"):
+            try:
+                await db[coll].update_many(
+                    {"campaign": {"$nin": ["", None]},
+                     "$or": [{"utm_campaign": ""}, {"utm_campaign": {"$exists": False}}, {"utm_campaign": None}]},
+                    [{"$set": {"utm_campaign": "$campaign"}}],
+                )
+            except Exception as exc:  # pragma: no cover
+                logger.warning("Backfill utm_campaign %s: %s", coll, exc)
+        # 2) Événements d'audience : rattacher la campagne aux form_start/step_view/
+        #    form_submit sans campagne, d'après le page_view de la MÊME session.
+        for coll in ("analytics_events", "defense_analytics_events", "livret_analytics_events"):
+            try:
+                pipeline = [
+                    {"$match": {"type": "page_view", "utm_campaign": {"$nin": ["", None]}}},
+                    {"$group": {"_id": "$session_id", "campaign": {"$first": "$utm_campaign"}}},
+                ]
+                async for row in db[coll].aggregate(pipeline):
+                    sid, camp = row.get("_id"), row.get("campaign")
+                    if not sid or not camp:
+                        continue
+                    await db[coll].update_many(
+                        {"session_id": sid,
+                         "type": {"$in": ["form_start", "step_view", "form_submit"]},
+                         "$or": [{"utm_campaign": ""}, {"utm_campaign": {"$exists": False}}, {"utm_campaign": None}]},
+                        {"$set": {"utm_campaign": camp}},
+                    )
+            except Exception as exc:  # pragma: no cover
+                logger.warning("Backfill analytics campaign %s: %s", coll, exc)
+        await db.migrations.update_one(
+            {"_id": "campaign_backfill_v1"},
+            {"$set": {"done_at": datetime.now(timezone.utc).isoformat()}},
+            upsert=True,
+        )
+        logger.info("Migrations de rattrapage terminées (campaign_backfill_v1)")
+    except Exception as exc:  # pragma: no cover
+        logger.warning("run_backfills a échoué (sans impact sur le service) : %s", exc)
 
 
 @app.on_event("shutdown")
