@@ -141,7 +141,7 @@ export function fmtDateFr(iso) {
   if (!iso) return "—";
   try {
     const d = new Date(iso);
-    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric" });
+    return d.toLocaleDateString("fr-FR", { day: "2-digit", month: "2-digit", year: "numeric", timeZone: "Europe/Paris" });
   } catch {
     return iso;
   }
@@ -150,7 +150,7 @@ export function fmtDateFr(iso) {
 export function fmtTimeFr(iso) {
   if (!iso) return "";
   try {
-    return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+    return new Date(iso).toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit", timeZone: "Europe/Paris" });
   } catch {
     return "";
   }
