@@ -415,6 +415,15 @@ export default function DefenseLanding() {
                 <p className="text-sm font-semibold text-white font-['Manrope']">Une épargne qui porte les valeurs de la Défense française.</p>
               </div>
             </div>
+            {content?.logo && (
+              <div className="mt-6 flex justify-center" data-testid="defense-hero-logo">
+                <img
+                  src={content.logo}
+                  alt={content?.brand?.name ? `Logo ${content.brand.name}` : "Logo"}
+                  className="max-h-20 w-auto object-contain"
+                />
+              </div>
+            )}
           </motion.div>
 
           <motion.div {...heroFade} transition={{ duration: 0.7, delay: 0.1 }} className="relative">

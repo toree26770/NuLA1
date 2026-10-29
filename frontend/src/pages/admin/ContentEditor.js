@@ -1,7 +1,8 @@
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Save, ExternalLink, Plus, Trash2 } from "lucide-react";
+import { Save, ExternalLink, Plus, Trash2, Upload } from "lucide-react";
 import { API, fmtError } from "@/api";
+import { siteScope } from "@/defenseBase";
 
 function Field({ label, value, onChange, textarea = false, testid, hint }) {
   return (
@@ -63,6 +64,45 @@ export default function ContentEditor() {
     }
   };
 
+  // Import d'un logo : les images matricielles sont redimensionnées côté navigateur
+  // (max 400px) pour garder la page rapide ; les SVG sont conservés tels quels.
+  const onLogoFile = (file) => {
+    if (!file) return;
+    if (!file.type || !file.type.startsWith("image/")) {
+      toast.error("Choisissez un fichier image (PNG, JPEG, SVG…).");
+      return;
+    }
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      if (file.type === "image/svg+xml") {
+        set("logo", e.target.result);
+        toast.success("Logo chargé. Cliquez sur « Publier » pour l'afficher.");
+        return;
+      }
+      const img = new Image();
+      img.onload = () => {
+        const MAX = 400;
+        let { width, height } = img;
+        if (width >= height && width > MAX) {
+          height = Math.round((height * MAX) / width);
+          width = MAX;
+        } else if (height > MAX) {
+          width = Math.round((width * MAX) / height);
+          height = MAX;
+        }
+        const canvas = document.createElement("canvas");
+        canvas.width = width;
+        canvas.height = height;
+        canvas.getContext("2d").drawImage(img, 0, 0, width, height);
+        set("logo", canvas.toDataURL("image/png"));
+        toast.success("Logo chargé. Cliquez sur « Publier » pour l'afficher.");
+      };
+      img.onerror = () => toast.error("Image illisible, essayez un autre fichier.");
+      img.src = e.target.result;
+    };
+    reader.readAsDataURL(file);
+  };
+
   const o = content.offer;
   const ft = content.form_texts;
 
@@ -79,6 +119,38 @@ export default function ContentEditor() {
           </button>
         </div>
       </div>
+
+      {siteScope() === "defense" && (
+        <Section title="Logo (sous la photo du militaire)" testid="section-logo">
+          <p className="text-sm text-gray-500">
+            Importez votre logo (PNG, JPEG, SVG…). Il s'affichera sous la photo, sur la page militaire uniquement. L'image est optimisée automatiquement.
+          </p>
+          {content.logo ? (
+            <div className="flex flex-wrap items-center gap-5">
+              <div className="rounded-xl border border-gray-200 bg-[#071D3A] p-4">
+                <img src={content.logo} alt="Aperçu du logo" className="max-h-20 w-auto object-contain" data-testid="logo-preview" />
+              </div>
+              <div className="flex flex-col gap-2">
+                <label className="btn-primary-orange !py-2.5 !px-5 !text-sm cursor-pointer inline-flex items-center gap-2">
+                  <Upload className="h-4 w-4" /> Remplacer le logo
+                  <input type="file" accept="image/*" className="hidden" data-testid="logo-input" onChange={(e) => onLogoFile(e.target.files?.[0])} />
+                </label>
+                <button type="button" data-testid="logo-remove-btn" onClick={() => set("logo", "")} className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                  Retirer le logo
+                </button>
+              </div>
+            </div>
+          ) : (
+            <label className="flex flex-col items-center justify-center gap-2 rounded-xl border-2 border-dashed border-gray-300 py-10 cursor-pointer hover:bg-gray-50 transition-colors" data-testid="logo-dropzone">
+              <Upload className="h-6 w-6 text-gray-400" />
+              <span className="text-sm font-medium text-gray-600">Importer un logo</span>
+              <span className="text-xs text-gray-400">PNG, JPEG, SVG… — optimisé automatiquement</span>
+              <input type="file" accept="image/*" className="hidden" data-testid="logo-input" onChange={(e) => onLogoFile(e.target.files?.[0])} />
+            </label>
+          )}
+          <p className="text-xs text-gray-400">N'oubliez pas de cliquer sur « Publier les modifications » pour enregistrer.</p>
+        </Section>
+      )}
 
       <Section title="Section principale (héros)" testid="section-hero">
         <Field label="Petit texte orange" testid="hero-eyebrow" value={content.hero.eyebrow} onChange={(v) => set("hero.eyebrow", v)} />
