@@ -126,18 +126,36 @@ export default function ContentEditor() {
             Importez votre logo (PNG, JPEG, SVG…). Il s'affichera sous la photo, sur la page militaire uniquement. L'image est optimisée automatiquement.
           </p>
           {content.logo ? (
-            <div className="flex flex-wrap items-center gap-5">
-              <div className="rounded-xl border border-gray-200 bg-[#071D3A] p-4">
-                <img src={content.logo} alt="Aperçu du logo" className="max-h-20 w-auto object-contain" data-testid="logo-preview" />
+            <div className="space-y-5">
+              <div className="flex flex-wrap items-center gap-5">
+                <div className="rounded-xl border border-gray-200 bg-[#071D3A] p-4 flex items-center justify-center" style={{ minWidth: "120px" }}>
+                  <img src={content.logo} alt="Aperçu du logo" className="w-auto object-contain" style={{ height: `${content.logo_size || 80}px`, maxWidth: "260px" }} data-testid="logo-preview" />
+                </div>
+                <div className="flex flex-col gap-2">
+                  <label className="btn-primary-orange !py-2.5 !px-5 !text-sm cursor-pointer inline-flex items-center gap-2">
+                    <Upload className="h-4 w-4" /> Remplacer le logo
+                    <input type="file" accept="image/*" className="hidden" data-testid="logo-input" onChange={(e) => onLogoFile(e.target.files?.[0])} />
+                  </label>
+                  <button type="button" data-testid="logo-remove-btn" onClick={() => set("logo", "")} className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
+                    Retirer le logo
+                  </button>
+                </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <label className="btn-primary-orange !py-2.5 !px-5 !text-sm cursor-pointer inline-flex items-center gap-2">
-                  <Upload className="h-4 w-4" /> Remplacer le logo
-                  <input type="file" accept="image/*" className="hidden" data-testid="logo-input" onChange={(e) => onLogoFile(e.target.files?.[0])} />
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Taille du logo : <span className="font-semibold text-[#FF683D]">{content.logo_size || 80} px</span>
                 </label>
-                <button type="button" data-testid="logo-remove-btn" onClick={() => set("logo", "")} className="rounded-xl border border-gray-300 px-4 py-2.5 text-sm font-semibold text-gray-600 hover:bg-gray-50">
-                  Retirer le logo
-                </button>
+                <input
+                  type="range"
+                  min="30"
+                  max="240"
+                  step="2"
+                  data-testid="logo-size-range"
+                  value={content.logo_size || 80}
+                  onChange={(e) => set("logo_size", Number(e.target.value))}
+                  className="w-full max-w-md accent-[#FF683D] cursor-pointer"
+                />
+                <p className="mt-1 text-xs text-gray-400">Glissez pour agrandir ou rétrécir le logo affiché sur la page.</p>
               </div>
             </div>
           ) : (

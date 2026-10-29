@@ -420,7 +420,8 @@ export default function DefenseLanding() {
                 <img
                   src={content.logo}
                   alt={content?.brand?.name ? `Logo ${content.brand.name}` : "Logo"}
-                  className="max-h-20 w-auto object-contain"
+                  className="w-auto object-contain"
+                  style={{ height: `${content.logo_size || 80}px`, maxWidth: "100%" }}
                 />
               </div>
             )}
