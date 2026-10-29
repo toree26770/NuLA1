@@ -419,6 +419,75 @@ async def delete_pixel(pixel_doc_id: str):
     return {"ok": True}
 
 
+# ---------------------------------------------------------------------------
+# Balises Google (gtag.js / Google Ads) — même logique que les Pixels Meta.
+# ---------------------------------------------------------------------------
+GTAG_ID_RE = re.compile(r"^(?:AW|G|GT|DC|UA)-[A-Za-z0-9-]{4,30}$")
+GTAG_LABEL_RE = re.compile(r"^[A-Za-z0-9_-]{1,40}$")
+
+
+@router.get("/google-tags")
+async def list_google_tags():
+    items = await db.defense_google_tags.find({}, {"_id": 0}).sort("created_at", 1).to_list(500)
+    return {"items": items}
+
+
+@router.post("/google-tags")
+async def create_google_tag(body: dict):
+    tag_id = str(body.get("tag_id", "")).strip()
+    if not GTAG_ID_RE.match(tag_id):
+        raise HTTPException(status_code=400, detail="Identifiant Google invalide (ex. AW-123456789 ou G-XXXXXXXX).")
+    label = str(body.get("conversion_label", "")).strip()
+    if label and not GTAG_LABEL_RE.match(label):
+        raise HTTPException(status_code=400, detail="Libellé de conversion invalide.")
+    doc = {
+        "id": new_id(),
+        "name": (str(body.get("name", "")).strip()[:120]) or f"Balise {tag_id}",
+        "tag_id": tag_id,
+        "conversion_label": label,
+        "enabled": bool(body.get("enabled", True)),
+        "is_default": bool(body.get("is_default", False)),
+        "campaigns": _clean_campaigns(body.get("campaigns")),
+        "created_at": now_iso(),
+    }
+    await db.defense_google_tags.insert_one(dict(doc))
+    return {"ok": True, "tag": doc}
+
+
+@router.put("/google-tags/{tag_doc_id}")
+async def update_google_tag(tag_doc_id: str, body: dict):
+    update = {}
+    if "name" in body:
+        update["name"] = str(body["name"]).strip()[:120]
+    if "tag_id" in body:
+        tid = str(body["tag_id"]).strip()
+        if not GTAG_ID_RE.match(tid):
+            raise HTTPException(status_code=400, detail="Identifiant Google invalide (ex. AW-123456789 ou G-XXXXXXXX).")
+        update["tag_id"] = tid
+    if "conversion_label" in body:
+        label = str(body["conversion_label"]).strip()
+        if label and not GTAG_LABEL_RE.match(label):
+            raise HTTPException(status_code=400, detail="Libellé de conversion invalide.")
+        update["conversion_label"] = label
+    if "enabled" in body:
+        update["enabled"] = bool(body["enabled"])
+    if "is_default" in body:
+        update["is_default"] = bool(body["is_default"])
+    if "campaigns" in body:
+        update["campaigns"] = _clean_campaigns(body["campaigns"])
+    if update:
+        res = await db.defense_google_tags.update_one({"id": tag_doc_id}, {"$set": update})
+        if res.matched_count == 0:
+            raise HTTPException(status_code=404, detail="Balise introuvable")
+    return {"ok": True}
+
+
+@router.delete("/google-tags/{tag_doc_id}")
+async def delete_google_tag(tag_doc_id: str):
+    await db.defense_google_tags.delete_one({"id": tag_doc_id})
+    return {"ok": True}
+
+
 # ---------- Exports CSV ----------
 
 async def _collect_extra_labels(lead_ids):

@@ -43,6 +43,38 @@ async def active_pixels(campaign: str | None = None):
     return {"campaign": camp, "pixels": [{"pixel_id": p["pixel_id"], "name": p.get("name", "")} for p in result]}
 
 
+GTAG_ID_RE = re.compile(r"^(?:AW|G|GT|DC|UA)-[A-Za-z0-9-]{4,30}$")
+
+
+@router.get("/google-tags/active")
+async def active_google_tags(campaign: str | None = None):
+    """Retourne les balises Google à charger pour ce visiteur (résolution côté serveur)."""
+    camp = re.sub(r"[^a-z0-9_-]", "", (campaign or "").strip().lower())[:64]
+    tags = await db.defense_google_tags.find(
+        {"enabled": True},
+        {"_id": 0, "tag_id": 1, "conversion_label": 1, "campaigns": 1, "is_default": 1, "name": 1},
+    ).to_list(500)
+    selected = []
+    for t in tags:
+        camps = t.get("campaigns") or []
+        if camp:
+            if camp in camps:
+                selected.append(t)
+        elif t.get("is_default"):
+            selected.append(t)
+    out = []
+    for t in selected:
+        if not GTAG_ID_RE.match(t.get("tag_id", "")):
+            continue
+        label = (t.get("conversion_label") or "").strip()
+        out.append({
+            "tag_id": t["tag_id"],
+            "name": t.get("name", ""),
+            "send_to": f"{t['tag_id']}/{label}" if label else None,
+        })
+    return {"campaign": camp, "tags": out}
+
+
 @router.get("/form/published")
 async def get_published_form():
     version = await db.defense_form_versions.find_one({"status": "published"}, {"_id": 0})

@@ -7,6 +7,7 @@ import {
 import { API, getSessionId, trackDefense } from "@/api";
 import { applyDefenseBranding } from "@/defenseBase";
 import { loadPixels, trackSingle } from "@/metaPixel";
+import { loadGoogleTags, trackGoogleConversion } from "@/googleTag";
 
 const NAVY = "#071D3A";
 const fade = { initial: { opacity: 0, y: 24 }, whileInView: { opacity: 1, y: 0 }, viewport: { once: true, margin: "-80px" }, transition: { duration: 0.6, ease: "easeOut" } };
@@ -186,6 +187,7 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
       });
       trackDefense("form_submit");
       pixelIds.forEach((id) => trackSingle(id, "Lead"));
+      (window.__defenseGoogleSendTo || []).forEach((st) => trackGoogleConversion(st));
       setDone(true);
     } catch (err) {
       const d = err?.response?.data?.detail;
@@ -359,6 +361,12 @@ export default function DefenseLanding() {
       const ids = (r.data.pixels || []).map((p) => p.pixel_id);
       window.__defensePixelIds = ids;
       if (ids.length) loadPixels(ids).then(() => ids.forEach((id) => trackSingle(id, "PageView"))).catch(() => {});
+    }).catch(() => {});
+    API.get(`/defense/google-tags/active${campaign ? `?campaign=${encodeURIComponent(campaign)}` : ""}`).then((r) => {
+      const tags = r.data.tags || [];
+      window.__defenseGoogleSendTo = tags.map((t) => t.send_to).filter(Boolean);
+      const ids = tags.map((t) => t.tag_id);
+      if (ids.length) loadGoogleTags(ids).catch(() => {});
     }).catch(() => {});
   }, [campaign]);
 

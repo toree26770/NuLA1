@@ -3,6 +3,8 @@ import { toast } from "sonner";
 import { Save, ShieldAlert } from "lucide-react";
 import { API, fmtDateFr, fmtTimeFr, fmtError } from "@/api";
 import MetaPixelsManager from "@/pages/admin/MetaPixelsManager";
+import GoogleTagsManager from "@/pages/admin/GoogleTagsManager";
+import { siteScope } from "@/defenseBase";
 
 const EVENT_LABELS = {
   honeypot: "Piège anti-bot (honeypot)",
@@ -75,6 +77,8 @@ export default function SettingsPage() {
       </div>
 
       <MetaPixelsManager />
+
+      {siteScope() === "defense" && <GoogleTagsManager />}
 
       <div className="rounded-2xl border border-gray-200 bg-white p-6 shadow-sm" data-testid="security-section">
         <h2 className="font-semibold text-[#0B111B] mb-4 flex items-center gap-2"><ShieldAlert className="h-5 w-5 text-[#FF683D]" /> Journal de sécurité</h2>
