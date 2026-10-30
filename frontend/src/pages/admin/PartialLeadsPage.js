@@ -11,6 +11,23 @@ function displayValue(key, val) {
   return val || "—";
 }
 
+// Badge de provenance du lead (Meta / Google), déduit côté backend.
+function SourceBadge({ label, fallback }) {
+  if (!label) {
+    return <span className="text-gray-400">{fallback || "—"}</span>;
+  }
+  const styles = {
+    Meta: "bg-[#1877F2]/10 text-[#1877F2] border-[#1877F2]/20",
+    Google: "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
+    "Meta + Google": "bg-purple-50 text-purple-700 border-purple-200",
+  };
+  return (
+    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles[label] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
+      {label}
+    </span>
+  );
+}
+
 export default function PartialLeadsPage() {
   const [view, setView] = useState("pending"); // "pending" | "recovered"
   const [items, setItems] = useState([]);
@@ -180,7 +197,9 @@ export default function PartialLeadsPage() {
                           {it.recovered_at ? `${fmtDateFr(it.recovered_at)} ${fmtTimeFr(it.recovered_at)}` : "—"}
                         </td>
                       ) : (
-                        <td className="px-5 py-3.5 text-gray-500">{it.utm_source || "—"}</td>
+                        <td className="px-5 py-3.5" data-testid={`partial-source-${it.id}`}>
+                          <SourceBadge label={it.source_label} fallback={it.utm_source} />
+                        </td>
                       )}
                     </tr>
                   );

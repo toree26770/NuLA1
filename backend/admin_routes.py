@@ -7,6 +7,7 @@ from pydantic import BaseModel
 from auth import get_current_admin
 from csv_utils import FIXED_KEYS, build_leads_csv, build_partial_leads_csv
 from database import db, get_settings, new_id, now_iso
+from source_utils import campaign_sets, source_label
 
 router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_current_admin)])
 
@@ -227,6 +228,10 @@ async def list_partial_leads(
     pending_total = await db.partial_leads.count_documents({**base, "recovered": {"$ne": True}})
     recovered_total = await db.partial_leads.count_documents({**base, "recovered": True})
     items = await db.partial_leads.find(query, {"_id": 0}).sort("updated_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
+    pixels = await db.meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+    meta_camps, google_camps = campaign_sets(pixels, [])
+    for it in items:
+        it["source_label"] = source_label(it, meta_camps, google_camps)
     return {"items": items, "total": total, "pending_total": pending_total, "recovered_total": recovered_total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
 
 
