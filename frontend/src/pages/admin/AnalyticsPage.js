@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import {
   AreaChart, Area, XAxis, YAxis, Tooltip, ResponsiveContainer, CartesianGrid, Legend,
 } from "recharts";
-import { Eye, Users, PencilLine, CheckCircle2, LogOut, TrendingUp } from "lucide-react";
+import { Eye, Users, PencilLine, CheckCircle2, LogOut, TrendingUp, RefreshCw } from "lucide-react";
 import { API } from "@/api";
 
 const RANGES = [
@@ -143,6 +143,17 @@ export default function AnalyticsPage() {
               </button>
             ))}
           </div>
+          <button
+            type="button"
+            data-testid="analytics-refresh-btn"
+            onClick={load}
+            disabled={loading}
+            title="Rafraîchir les chiffres (sans changer la campagne)"
+            className="flex items-center gap-2 rounded-xl border border-gray-200 bg-white px-3.5 py-2 text-sm font-semibold text-gray-600 hover:bg-gray-50 hover:text-[#FF683D] disabled:opacity-60 transition-colors"
+          >
+            <RefreshCw className={`h-4 w-4 ${loading ? "animate-spin" : ""}`} />
+            Rafraîchir
+          </button>
         </div>
       </div>
 
