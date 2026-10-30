@@ -341,8 +341,8 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
 // celui mis en avant par l'offre ; les autres servent de comparaison indicative.
 const SIM_PRODUCTS = [
   { key: "defense", name: "Livret d'Épargne Défense", short: "Militaire", rate: 7.10, rateLabel: "7,10", highlight: true, interets: "Mensuels", libre: true, dispo: true, garanti: true, booste: true },
-  { key: "livretA", name: "Livret A", short: "Livret A", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
-  { key: "ldds", name: "LDDS", short: "LDDS", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
+  { key: "livretA", name: "Livret A", short: "Livret A", rate: 1.7, rateLabel: "1,7", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
+  { key: "ldds", name: "LDDS", short: "LDDS", rate: 1.7, rateLabel: "1,7", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
   { key: "classique", name: "Livret bancaire classique", short: "Livret classique", rate: 1.0, rateLabel: "1", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
 ];
 
