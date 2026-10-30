@@ -2,7 +2,7 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { motion } from "framer-motion";
 import {
   ShieldCheck, TrendingUp, CalendarCheck, Wallet, Lock, FileText, Users, PhoneCall,
-  ChevronDown, Check, ArrowRight,
+  ChevronDown, Check, ArrowRight, Calculator,
 } from "lucide-react";
 import { API, getSessionId, trackDefense } from "@/api";
 import { applyDefenseBranding } from "@/defenseBase";
@@ -337,6 +337,132 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
   );
 }
 
+// Taux NETS utilisés pour la simulation (modifiables ici). Le taux Défense est
+// celui mis en avant par l'offre ; les autres servent de comparaison indicative.
+const SIM_PRODUCTS = [
+  { key: "defense", name: "Livret d'Épargne Défense", rate: 7.19, highlight: true },
+  { key: "livretA", name: "Livret A", rate: 2.4 },
+  { key: "ldds", name: "LDDS", rate: 2.4 },
+  { key: "classique", name: "Livret bancaire classique", rate: 1.0 },
+];
+
+const eur = (n) =>
+  new Intl.NumberFormat("fr-FR", { style: "currency", currency: "EUR", maximumFractionDigits: 0 }).format(
+    Math.round(n || 0),
+  );
+
+function compoundInterest(principal, ratePct, years) {
+  // Intérêts composés annuels : capital final = P × (1 + r)^n
+  const final = principal * Math.pow(1 + ratePct / 100, years);
+  return { final, interest: final - principal };
+}
+
+function YieldSimulator() {
+  const [amount, setAmount] = useState(10000);
+  const [years, setYears] = useState(5);
+
+  const results = SIM_PRODUCTS.map((p) => ({ ...p, ...compoundInterest(amount, p.rate, years) }));
+  const defense = results.find((r) => r.key === "defense");
+  const maxInterest = Math.max(...results.map((r) => r.interest), 1);
+  const rentabilite = amount > 0 ? (defense.interest / amount) * 100 : 0;
+  const livretA = results.find((r) => r.key === "livretA");
+
+  return (
+    <section id="simulateur" className="bg-[#F5F6F8] border-y border-[#163A63]/10" data-testid="defense-simulator">
+      <div className="mx-auto max-w-6xl px-5 py-16 lg:py-20">
+        <div className="flex items-center gap-2 text-[#C8102E] font-semibold text-sm mb-3">
+          <Calculator className="h-4 w-4" /> SIMULATEUR DE RENDEMENT
+        </div>
+        <h2 className="font-display text-3xl lg:text-4xl font-bold text-[#071D3A] max-w-2xl">
+          Calculez vos intérêts composés à <span className="text-[#C8102E]">7,19 % net</span>
+        </h2>
+        <p className="mt-3 text-[#3A4A5E] max-w-2xl">
+          Estimez combien votre épargne peut rapporter, et comparez avec les livrets classiques. Simulation indicative, à titre d'illustration.
+        </p>
+
+        <div className="mt-10 grid lg:grid-cols-5 gap-6 items-start">
+          <div className="lg:col-span-2 rounded-2xl bg-white border border-[#163A63]/10 shadow-sm p-6 space-y-7">
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold text-[#071D3A]">Montant placé</label>
+                <span className="font-display text-lg font-bold text-[#C8102E]" data-testid="sim-amount-value">{eur(amount)}</span>
+              </div>
+              <input
+                type="range" min="1000" max="150000" step="500" value={amount}
+                onChange={(e) => setAmount(Number(e.target.value))}
+                data-testid="sim-amount-range"
+                className="w-full accent-[#C8102E] cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-[#6B7A8D] mt-1"><span>1 000 €</span><span>150 000 €</span></div>
+            </div>
+            <div>
+              <div className="flex items-center justify-between mb-2">
+                <label className="text-sm font-semibold text-[#071D3A]">Durée de placement</label>
+                <span className="font-display text-lg font-bold text-[#C8102E]" data-testid="sim-years-value">{years} an{years > 1 ? "s" : ""}</span>
+              </div>
+              <input
+                type="range" min="1" max="15" step="1" value={years}
+                onChange={(e) => setYears(Number(e.target.value))}
+                data-testid="sim-years-range"
+                className="w-full accent-[#C8102E] cursor-pointer"
+              />
+              <div className="flex justify-between text-xs text-[#6B7A8D] mt-1"><span>1 an</span><span>15 ans</span></div>
+            </div>
+          </div>
+
+          <div className="lg:col-span-3 rounded-2xl bg-[#071D3A] text-white shadow-xl p-7 relative overflow-hidden" data-testid="sim-result-defense">
+            <div className="absolute top-0 left-0 right-0 h-1.5"><Tricolore /></div>
+            <p className="text-sm text-white/70 mt-2">Avec le Livret d'Épargne Défense ({years} an{years > 1 ? "s" : ""}, intérêts composés)</p>
+            <div className="mt-4 grid sm:grid-cols-3 gap-5">
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/60">Intérêts gagnés</p>
+                <p className="font-display text-3xl font-bold text-[#FFD700]" data-testid="sim-defense-interest">{eur(defense.interest)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/60">Capital final</p>
+                <p className="font-display text-3xl font-bold" data-testid="sim-defense-final">{eur(defense.final)}</p>
+              </div>
+              <div>
+                <p className="text-xs uppercase tracking-wide text-white/60">Rentabilité totale</p>
+                <p className="font-display text-3xl font-bold text-[#FFD700]" data-testid="sim-defense-roi">+{rentabilite.toFixed(1)} %</p>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="mt-8 rounded-2xl bg-white border border-[#163A63]/10 shadow-sm p-6" data-testid="sim-comparison">
+          <h3 className="font-display text-xl font-bold text-[#071D3A] mb-5">Comparatif des intérêts gagnés sur {years} an{years > 1 ? "s" : ""}</h3>
+          <div className="space-y-4">
+            {results.map((r) => (
+              <div key={r.key} data-testid={`sim-compare-${r.key}`}>
+                <div className="flex items-center justify-between text-sm mb-1.5">
+                  <span className={`font-semibold ${r.highlight ? "text-[#C8102E]" : "text-[#3A4A5E]"}`}>
+                    {r.name} <span className="text-[#6B7A8D] font-normal">({r.rate.toLocaleString("fr-FR")} % net)</span>
+                  </span>
+                  <span className={`font-display font-bold ${r.highlight ? "text-[#C8102E]" : "text-[#071D3A]"}`}>{eur(r.interest)}</span>
+                </div>
+                <div className="h-3 rounded-full bg-[#EEF1F4] overflow-hidden">
+                  <div
+                    className={`h-full rounded-full ${r.highlight ? "bg-[#C8102E]" : "bg-[#9FB0C3]"}`}
+                    style={{ width: `${Math.max((r.interest / maxInterest) * 100, 2)}%` }}
+                  />
+                </div>
+              </div>
+            ))}
+          </div>
+          <p className="mt-5 text-sm text-[#3A4A5E]">
+            Soit <strong className="text-[#C8102E]">{eur(defense.interest - (livretA?.interest || 0))}</strong> d'intérêts en plus qu'un Livret A sur la même période.
+          </p>
+          <p className="mt-2 text-xs text-[#6B7A8D]">
+            Taux nets indicatifs, susceptibles d'évoluer. Les Livret A et LDDS sont réglementés et plafonnés. Cette simulation n'a pas de valeur contractuelle.
+          </p>
+        </div>
+      </div>
+    </section>
+  );
+}
+
+
 export default function DefenseLanding() {
   const [openFaq, setOpenFaq] = useState(0);
   const [form, setForm] = useState(null);
@@ -385,6 +511,7 @@ export default function DefenseLanding() {
           <nav className="hidden md:flex items-center gap-7 text-sm font-medium text-[#071D3A]/70">
             <a href="#livret" className="hover:text-[#071D3A]">Le livret</a>
             <a href="#tous" className="hover:text-[#071D3A]">Pour qui ?</a>
+            <a href="#simulateur" className="hover:text-[#071D3A]">Simulateur</a>
             <a href="#faq" className="hover:text-[#071D3A]">FAQ</a>
           </nav>
           <button type="button" data-testid="header-cta" onClick={scrollToForm} className="rounded-md bg-[#C8102E] px-4 py-2 text-sm font-semibold text-white hover:bg-[#a60d26] transition-colors">Vérifier mon éligibilité</button>
@@ -552,6 +679,8 @@ export default function DefenseLanding() {
           <p className="mt-6 text-xs text-white/40">Les noms et marques cités appartiennent à leurs propriétaires respectifs et sont mentionnés à titre illustratif du secteur d'activité.</p>
         </div>
       </section>
+
+      <YieldSimulator />
 
       {/* Formulaire */}
       <section id="eligibilite" className="mx-auto max-w-6xl px-5 py-16 lg:py-24 grid lg:grid-cols-2 gap-12 items-start">
