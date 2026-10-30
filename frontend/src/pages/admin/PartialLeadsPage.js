@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Download, Inbox, Loader2, CheckCircle2 } from "lucide-react";
 import { toast } from "sonner";
 import { API, downloadCsv, fmtDateFr, fmtTimeFr, fmtError } from "@/api";
+import { SourceBadge } from "@/components/SourceBadge";
 
 function displayValue(key, val) {
   if (val === true) return "Oui";
@@ -9,23 +10,6 @@ function displayValue(key, val) {
   if (Array.isArray(val)) return val.join(", ");
   if (key === "birth_date" && val) return fmtDateFr(val);
   return val || "—";
-}
-
-// Badge de provenance du lead (Meta / Google), déduit côté backend.
-function SourceBadge({ label, fallback }) {
-  if (!label) {
-    return <span className="text-gray-400">{fallback || "—"}</span>;
-  }
-  const styles = {
-    Meta: "bg-[#1877F2]/10 text-[#1877F2] border-[#1877F2]/20",
-    Google: "bg-[#16A34A]/10 text-[#16A34A] border-[#16A34A]/20",
-    "Meta + Google": "bg-purple-50 text-purple-700 border-purple-200",
-  };
-  return (
-    <span className={`inline-flex items-center rounded-full border px-2.5 py-0.5 text-xs font-semibold ${styles[label] || "bg-gray-100 text-gray-600 border-gray-200"}`}>
-      {label}
-    </span>
-  );
 }
 
 export default function PartialLeadsPage() {

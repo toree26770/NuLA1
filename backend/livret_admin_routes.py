@@ -212,6 +212,10 @@ async def list_leads(
         query["$and"] = and_clauses
     total = await db.livret_leads.count_documents(query)
     leads = await db.livret_leads.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
+    pixels = await db.livret_meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+    meta_camps, google_camps = campaign_sets(pixels, [])
+    for lead in leads:
+        lead["source_label"] = source_label(lead, meta_camps, google_camps)
     return {"leads": leads, "total": total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
 
 
@@ -257,6 +261,9 @@ async def get_lead(lead_id: str):
     lead = await db.livret_leads.find_one({"id": lead_id}, {"_id": 0})
     if not lead:
         raise HTTPException(status_code=404, detail="Lead introuvable")
+    pixels = await db.livret_meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+    meta_camps, google_camps = campaign_sets(pixels, [])
+    lead["source_label"] = source_label(lead, meta_camps, google_camps)
     answers = await db.livret_lead_answers.find({"lead_id": lead_id}, {"_id": 0}).to_list(200)
     return {"lead": lead, "answers": answers}
 

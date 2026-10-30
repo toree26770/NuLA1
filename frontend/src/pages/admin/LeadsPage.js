@@ -4,6 +4,7 @@ import { Search, Download, Eye, Trash2, ChevronLeft, ChevronRight, FileDown, Che
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { API, STATUS_LABELS, STATUS_COLORS, downloadBatch, fmtDateFr, fmtTimeFr, fmtError } from "@/api";
+import { SourceBadge } from "@/components/SourceBadge";
 
 const AMOUNTS = [
   "500 € à moins de 5 000 €", "5 000 € à moins de 10 000 €", "10 000 € à moins de 25 000 €",
@@ -237,6 +238,7 @@ export default function LeadsPage({ status, title }) {
               <th className="p-3">E-mail</th>
               <th className="p-3">Montant envisagé</th>
               <th className="p-3">Campagne</th>
+              <th className="p-3">Source</th>
               <th className="p-3">Statut</th>
               <th className="p-3">Récupéré le</th>
               <th className="p-3"></th>
@@ -256,6 +258,7 @@ export default function LeadsPage({ status, title }) {
                 <td className="p-3">{lead.email_normalized || "—"}</td>
                 <td className="p-3">{lead.amount_range || "—"}</td>
                 <td className="p-3">{lead.utm_campaign || lead.campaign_id || <span className="text-gray-400">(direct)</span>}</td>
+                <td className="p-3" data-testid={`lead-source-${lead.id.slice(0, 8)}`}><SourceBadge label={lead.source_label} fallback={lead.utm_source} /></td>
                 <td className="p-3"><StatusBadge status={lead.status} /></td>
                 <td className="p-3 whitespace-nowrap">{lead.retrieved_at ? `${fmtDateFr(lead.retrieved_at)} ${fmtTimeFr(lead.retrieved_at)}` : "—"}</td>
                 <td className="p-3">
@@ -271,7 +274,7 @@ export default function LeadsPage({ status, title }) {
               </tr>
             ))}
             {data.leads.length === 0 && (
-              <tr><td colSpan={12} className="p-10 text-center text-gray-400" data-testid="leads-empty">Aucun lead ne correspond aux critères.</td></tr>
+              <tr><td colSpan={13} className="p-10 text-center text-gray-400" data-testid="leads-empty">Aucun lead ne correspond aux critères.</td></tr>
             )}
           </tbody>
         </table>
@@ -324,6 +327,7 @@ export default function LeadsPage({ status, title }) {
                 <div>
                   <h3 className="text-sm font-semibold text-gray-700 mb-2">Campagne Meta</h3>
                   <div className="rounded-xl border border-gray-200 p-4 text-xs space-y-1.5 text-gray-600">
+                    <p>Provenance : <SourceBadge label={detail.lead.source_label} fallback={detail.lead.utm_source} /></p>
                     <p>utm_source : <b>{detail.lead.utm_source || "—"}</b> · utm_medium : <b>{detail.lead.utm_medium || "—"}</b></p>
                     <p>utm_campaign : <b>{detail.lead.utm_campaign || "—"}</b></p>
                     <p>utm_content : <b>{detail.lead.utm_content || "—"}</b> · utm_term : <b>{detail.lead.utm_term || "—"}</b></p>
