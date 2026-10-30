@@ -342,7 +342,7 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
 const SIM_PRODUCTS = [
   { key: "defense", name: "Livret d'Épargne Défense", short: "Militaire", rate: 7.10, rateLabel: "7,10", highlight: true, interets: "Mensuels", libre: true, dispo: true, garanti: true, booste: true },
   { key: "livretA", name: "Livret A", short: "Livret A", rate: 1.7, rateLabel: "1,7", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
-  { key: "ldds", name: "LDDS", short: "LDDS", rate: 1.7, rateLabel: "1,7", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
+  { key: "assurancevie", name: "Assurance-vie (fonds €)", short: "Assurance-vie", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
   { key: "classique", name: "Livret bancaire classique", short: "Livret classique", rate: 1.0, rateLabel: "1", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
 ];
 
@@ -523,7 +523,7 @@ function YieldSimulator() {
             Soit <strong className="text-[#C8102E]">{eur(defense.interest - (livretA?.interest || 0))}</strong> d'intérêts en plus qu'un Livret A sur la même période.
           </p>
           <p className="mt-2 text-center text-xs text-[#6B7A8D] max-w-3xl mx-auto">
-            Taux nets indicatifs, susceptibles d'évoluer. Les Livret A et LDDS sont réglementés et plafonnés. Cette simulation n'a pas de valeur contractuelle.
+            Taux nets indicatifs, susceptibles d'évoluer. Le Livret A est réglementé et plafonné ; le rendement de l'assurance-vie (fonds euros) est un taux net moyen indicatif, non garanti. Cette simulation n'a pas de valeur contractuelle.
           </p>
         </div>
       </div>
