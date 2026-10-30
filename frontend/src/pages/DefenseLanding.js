@@ -340,10 +340,19 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
 // Taux NETS utilisés pour la simulation (modifiables ici). Le taux Défense est
 // celui mis en avant par l'offre ; les autres servent de comparaison indicative.
 const SIM_PRODUCTS = [
-  { key: "defense", name: "Livret d'Épargne Défense", rate: 7.19, highlight: true },
-  { key: "livretA", name: "Livret A", rate: 2.4 },
-  { key: "ldds", name: "LDDS", rate: 2.4 },
-  { key: "classique", name: "Livret bancaire classique", rate: 1.0 },
+  { key: "defense", name: "Livret d'Épargne Défense", short: "Militaire", rate: 7.10, rateLabel: "7,10", highlight: true, interets: "Mensuels", libre: true, dispo: true, garanti: true, booste: true },
+  { key: "livretA", name: "Livret A", short: "Livret A", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
+  { key: "ldds", name: "LDDS", short: "LDDS", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
+  { key: "classique", name: "Livret bancaire classique", short: "Livret classique", rate: 1.0, rateLabel: "1", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
+];
+
+// Caractéristiques comparées, dans l'ordre d'affichage.
+const SIM_FEATURE_ROWS = [
+  { key: "interets", label: "Versement des intérêts", type: "text" },
+  { key: "libre", label: "Versement libre", type: "bool" },
+  { key: "dispo", label: "Disponible à tout moment", type: "bool" },
+  { key: "garanti", label: "Capital garanti", type: "bool" },
+  { key: "booste", label: "Taux boosté réservé", type: "bool" },
 ];
 
 const eur = (n) =>
@@ -363,7 +372,6 @@ function YieldSimulator() {
 
   const results = SIM_PRODUCTS.map((p) => ({ ...p, ...compoundInterest(amount, p.rate, years) }));
   const defense = results.find((r) => r.key === "defense");
-  const maxInterest = Math.max(...results.map((r) => r.interest), 1);
   const rentabilite = amount > 0 ? (defense.interest / amount) * 100 : 0;
   const livretA = results.find((r) => r.key === "livretA");
 
@@ -374,7 +382,7 @@ function YieldSimulator() {
           <Calculator className="h-4 w-4" /> SIMULATEUR DE RENDEMENT
         </div>
         <h2 className="font-display text-3xl lg:text-4xl font-bold text-[#071D3A] max-w-2xl">
-          Calculez vos intérêts composés à <span className="text-[#C8102E]">7,19 % net</span>
+          Calculez vos intérêts composés à <span className="text-[#C8102E]">7,10 % net</span>
         </h2>
         <p className="mt-3 text-[#3A4A5E] max-w-2xl">
           Estimez combien votre épargne peut rapporter, et comparez avec les livrets classiques. Simulation indicative, à titre d'illustration.
@@ -411,8 +419,8 @@ function YieldSimulator() {
           </div>
 
           <div className="lg:col-span-3 rounded-2xl bg-[#071D3A] text-white shadow-xl p-7 relative overflow-hidden" data-testid="sim-result-defense">
-            <div className="absolute top-0 left-0 right-0 h-1.5"><Tricolore /></div>
-            <p className="text-sm text-white/70 mt-2">Avec le Livret d'Épargne Défense ({years} an{years > 1 ? "s" : ""}, intérêts composés)</p>
+            <span className="inline-flex items-center gap-1.5 rounded-full bg-[#C8102E] px-3 py-1 text-xs font-semibold tracking-wide">Livret d'Épargne Défense</span>
+            <p className="text-sm text-white/70 mt-3">Projection sur {years} an{years > 1 ? "s" : ""}, intérêts composés au taux net de 7,10 %.</p>
             <div className="mt-4 grid sm:grid-cols-3 gap-5">
               <div>
                 <p className="text-xs uppercase tracking-wide text-white/60">Intérêts gagnés</p>
@@ -430,30 +438,91 @@ function YieldSimulator() {
           </div>
         </div>
 
-        <div className="mt-8 rounded-2xl bg-white border border-[#163A63]/10 shadow-sm p-6" data-testid="sim-comparison">
-          <h3 className="font-display text-xl font-bold text-[#071D3A] mb-5">Comparatif des intérêts gagnés sur {years} an{years > 1 ? "s" : ""}</h3>
-          <div className="space-y-4">
-            {results.map((r) => (
-              <div key={r.key} data-testid={`sim-compare-${r.key}`}>
-                <div className="flex items-center justify-between text-sm mb-1.5">
-                  <span className={`font-semibold ${r.highlight ? "text-[#C8102E]" : "text-[#3A4A5E]"}`}>
-                    {r.name} <span className="text-[#6B7A8D] font-normal">({r.rate.toLocaleString("fr-FR")} % net)</span>
-                  </span>
-                  <span className={`font-display font-bold ${r.highlight ? "text-[#C8102E]" : "text-[#071D3A]"}`}>{eur(r.interest)}</span>
-                </div>
-                <div className="h-3 rounded-full bg-[#EEF1F4] overflow-hidden">
-                  <div
-                    className={`h-full rounded-full ${r.highlight ? "bg-[#C8102E]" : "bg-[#9FB0C3]"}`}
-                    style={{ width: `${Math.max((r.interest / maxInterest) * 100, 2)}%` }}
-                  />
-                </div>
-              </div>
-            ))}
+        <div className="mt-12" data-testid="sim-comparison">
+          <div className="text-center max-w-2xl mx-auto">
+            <p className="mb-2 text-sm font-semibold tracking-widest text-[#C8102E]">● LE LIVRET DÉFENSE FACE AUX AUTRES</p>
+            <h3 className="font-display text-2xl lg:text-3xl font-bold text-[#071D3A]">
+              Comparez sur {years} an{years > 1 ? "s" : ""} pour {eur(amount)} placé{amount > 1 ? "s" : ""}
+            </h3>
+            <p className="mt-3 text-[#3A4A5E] text-sm">
+              Mêmes versements, mêmes intérêts composés : voici ce que rapporte chaque livret et leurs principales caractéristiques.
+            </p>
           </div>
-          <p className="mt-5 text-sm text-[#3A4A5E]">
+
+          <div className="mt-10 grid gap-5 md:grid-cols-2 lg:grid-cols-4 items-stretch">
+            {results.map((r) => {
+              const hl = r.highlight;
+              return (
+                <div
+                  key={r.key}
+                  data-testid={`sim-card-${r.key}`}
+                  className={`relative flex flex-col rounded-2xl p-6 ${
+                    hl
+                      ? "bg-[#071D3A] text-white shadow-2xl shadow-[#071D3A]/30 ring-2 ring-[#C8102E] lg:-mt-3 lg:mb-3"
+                      : "bg-white text-[#071D3A] border border-[#163A63]/12 shadow-sm"
+                  }`}
+                >
+                  {hl && (
+                    <span className="absolute -top-3 right-5 rounded-full bg-[#C8102E] px-3 py-1 text-[11px] font-bold uppercase tracking-wider text-white shadow-lg">
+                      Recommandé
+                    </span>
+                  )}
+                  <p className={`text-xs font-bold uppercase tracking-wider ${hl ? "text-[#C8102E]" : "text-[#6B7A8D]"}`}>
+                    {r.highlight ? "Livret d'Épargne Défense" : r.name}
+                  </p>
+                  <div className="mt-3 flex items-end gap-1.5">
+                    <span className="font-display text-4xl font-extrabold">{r.rateLabel}%</span>
+                    <span className={`mb-1.5 text-xs ${hl ? "text-white/60" : "text-[#6B7A8D]"}`}>net / an</span>
+                  </div>
+
+                  <div className={`mt-5 rounded-xl p-4 ${hl ? "bg-white/10" : "bg-[#F5F6F8]"}`}>
+                    <p className={`text-[11px] uppercase tracking-wide ${hl ? "text-white/60" : "text-[#6B7A8D]"}`}>Intérêts gagnés</p>
+                    <p className={`font-display text-2xl font-bold ${hl ? "text-[#FFD700]" : "text-[#071D3A]"}`} data-testid={`sim-card-interest-${r.key}`}>
+                      {eur(r.interest)}
+                    </p>
+                    <p className={`mt-2 text-xs ${hl ? "text-white/70" : "text-[#3A4A5E]"}`}>
+                      Capital final <strong className={hl ? "text-white" : "text-[#071D3A]"}>{eur(r.final)}</strong>
+                    </p>
+                  </div>
+
+                  <ul className="mt-5 space-y-3 flex-1">
+                    {SIM_FEATURE_ROWS.map((f) => {
+                      const val = r[f.key];
+                      return (
+                        <li key={f.key} className="flex items-center justify-between gap-2 text-sm">
+                          <span className={hl ? "text-white/80" : "text-[#3A4A5E]"}>{f.label}</span>
+                          {f.type === "text" ? (
+                            <span className={`font-semibold ${hl ? "text-[#FFD700]" : "text-[#071D3A]"}`}>{val}</span>
+                          ) : val ? (
+                            <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${hl ? "bg-[#C8102E]" : "bg-[#16A34A]/10"}`}>
+                              <Check className={`h-3.5 w-3.5 ${hl ? "text-white" : "text-[#16A34A]"}`} strokeWidth={3} />
+                            </span>
+                          ) : (
+                            <span className="flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[#071D3A]/5 text-[#071D3A]/30 text-xs font-bold">—</span>
+                          )}
+                        </li>
+                      );
+                    })}
+                  </ul>
+
+                  {hl && (
+                    <a
+                      href="#eligibilite"
+                      data-testid="sim-card-cta"
+                      className="mt-6 inline-flex w-full items-center justify-center rounded-md bg-[#C8102E] px-4 py-3 text-sm font-semibold text-white hover:bg-[#a60d26] transition-colors"
+                    >
+                      Vérifier mon éligibilité
+                    </a>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+
+          <p className="mt-6 text-center text-sm text-[#3A4A5E]">
             Soit <strong className="text-[#C8102E]">{eur(defense.interest - (livretA?.interest || 0))}</strong> d'intérêts en plus qu'un Livret A sur la même période.
           </p>
-          <p className="mt-2 text-xs text-[#6B7A8D]">
+          <p className="mt-2 text-center text-xs text-[#6B7A8D] max-w-3xl mx-auto">
             Taux nets indicatifs, susceptibles d'évoluer. Les Livret A et LDDS sont réglementés et plafonnés. Cette simulation n'a pas de valeur contractuelle.
           </p>
         </div>
