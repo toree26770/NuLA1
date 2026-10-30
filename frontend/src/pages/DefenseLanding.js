@@ -340,10 +340,10 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
 // Taux NETS utilisés pour la simulation (modifiables ici). Le taux Défense est
 // celui mis en avant par l'offre ; les autres servent de comparaison indicative.
 const SIM_PRODUCTS = [
-  { key: "defense", name: "Livret d'Épargne Défense", short: "Militaire", rate: 7.10, rateLabel: "7,10", highlight: true, interets: "Mensuels", libre: true, dispo: "À tout moment", garanti: true, booste: true },
-  { key: "livretA", name: "Livret A", short: "Livret A", rate: 1.7, rateLabel: "1,7", interets: "Annuels", libre: true, dispo: "À tout moment", garanti: true, booste: false },
-  { key: "assurancevie", name: "Assurance-vie (fonds €)", short: "Assurance-vie", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: "Sous quelques jours", garanti: true, booste: false },
-  { key: "classique", name: "Livret bancaire classique", short: "Livret classique", rate: 1.0, rateLabel: "1", interets: "Annuels", libre: true, dispo: "À tout moment", garanti: true, booste: false },
+  { key: "defense", name: "Livret d'Épargne Défense", short: "Militaire", rate: 7.10, rateLabel: "7,10", highlight: true, freq: 12, interets: "Chaque mois", libre: true, dispo: "À tout moment", garanti: true, booste: true },
+  { key: "livretA", name: "Livret A", short: "Livret A", rate: 1.7, rateLabel: "1,7", freq: 1, interets: "1 fois / an", libre: true, dispo: "À tout moment", garanti: true, booste: false },
+  { key: "assurancevie", name: "Assurance-vie (fonds €)", short: "Assurance-vie", rate: 2.4, rateLabel: "2,4", freq: 1, interets: "1 fois / an", libre: true, dispo: "Sous quelques jours", garanti: true, booste: false },
+  { key: "classique", name: "Livret bancaire classique", short: "Livret classique", rate: 1.0, rateLabel: "1", freq: 1, interets: "1 fois / an", libre: true, dispo: "À tout moment", garanti: true, booste: false },
 ];
 
 // Caractéristiques comparées, dans l'ordre d'affichage.
@@ -360,9 +360,9 @@ const eur = (n) =>
     Math.round(n || 0),
   );
 
-function compoundInterest(principal, ratePct, years) {
-  // Intérêts composés annuels : capital final = P × (1 + r)^n
-  const final = principal * Math.pow(1 + ratePct / 100, years);
+function compoundInterest(principal, ratePct, years, freq = 1) {
+  // Intérêts composés : capital final = P × (1 + r/f)^(f×n), f = nb de capitalisations / an.
+  const final = principal * Math.pow(1 + ratePct / 100 / freq, freq * years);
   return { final, interest: final - principal };
 }
 
@@ -370,7 +370,7 @@ function YieldSimulator() {
   const [amount, setAmount] = useState(10000);
   const [years, setYears] = useState(5);
 
-  const results = SIM_PRODUCTS.map((p) => ({ ...p, ...compoundInterest(amount, p.rate, years) }));
+  const results = SIM_PRODUCTS.map((p) => ({ ...p, ...compoundInterest(amount, p.rate, years, p.freq || 1) }));
   const defense = results.find((r) => r.key === "defense");
   const rentabilite = amount > 0 ? (defense.interest / amount) * 100 : 0;
   const livretA = results.find((r) => r.key === "livretA");
@@ -420,7 +420,7 @@ function YieldSimulator() {
 
           <div className="lg:col-span-3 rounded-2xl bg-[#071D3A] text-white shadow-xl p-7 relative overflow-hidden" data-testid="sim-result-defense">
             <span className="inline-flex items-center gap-1.5 rounded-full bg-[#C8102E] px-3 py-1 text-xs font-semibold tracking-wide">Livret d'Épargne Défense</span>
-            <p className="text-sm text-white/70 mt-3">Projection sur {years} an{years > 1 ? "s" : ""}, intérêts composés au taux net de 7,10 %.</p>
+            <p className="text-sm text-white/70 mt-3">Projection sur {years} an{years > 1 ? "s" : ""} au taux net de 7,10 %, intérêts versés et capitalisés chaque mois.</p>
             <div className="mt-4 grid sm:grid-cols-3 gap-5">
               <div>
                 <p className="text-xs uppercase tracking-wide text-white/60">Intérêts gagnés</p>
@@ -445,7 +445,7 @@ function YieldSimulator() {
               Comparez sur {years} an{years > 1 ? "s" : ""} pour {eur(amount)} placé{amount > 1 ? "s" : ""}
             </h3>
             <p className="mt-3 text-[#3A4A5E] text-sm">
-              Mêmes versements, mêmes intérêts composés : voici ce que rapporte chaque livret et leurs principales caractéristiques.
+              Le Livret Défense capitalise les intérêts chaque mois, les autres une fois par an : voici ce que rapporte chaque placement et leurs principales caractéristiques.
             </p>
           </div>
 
