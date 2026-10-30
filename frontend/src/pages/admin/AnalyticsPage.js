@@ -55,8 +55,22 @@ export default function AnalyticsPage() {
       API.get("/admin/pixels").then((r) => (r.data.items || []).flatMap((p) => p.campaigns || [])).catch(() => []),
       API.get("/admin/google-tags").then((r) => (r.data.items || []).flatMap((t) => t.campaigns || [])).catch(() => []),
     ]).then(([fromLeads, fromPixels, fromGoogle]) => {
-      const set = new Set([...fromLeads, ...fromPixels, ...fromGoogle].map((c) => (c || "").trim()).filter(Boolean));
-      setCampaigns([...set].sort());
+      const srcMap = new Map(); // nom -> Set de sources (Meta / Google)
+      const add = (arr, src) =>
+        (arr || [])
+          .map((c) => (c || "").trim())
+          .filter(Boolean)
+          .forEach((c) => {
+            if (!srcMap.has(c)) srcMap.set(c, new Set());
+            if (src) srcMap.get(c).add(src);
+          });
+      add(fromLeads, null);
+      add(fromPixels, "Meta");
+      add(fromGoogle, "Google");
+      const list = [...srcMap.entries()]
+        .map(([name, set]) => ({ name, sources: [...set] }))
+        .sort((a, b) => a.name.localeCompare(b.name));
+      setCampaigns(list);
     });
   }, []);
 
@@ -108,9 +122,11 @@ export default function AnalyticsPage() {
             className="rounded-xl border border-gray-200 bg-white px-3 py-2 text-sm font-semibold text-gray-700 outline-none focus:ring-2 focus:ring-[#FF683D] cursor-pointer"
           >
             <option value="">Toutes les campagnes</option>
-            {campaigns.map((c) => (
-              <option key={c} value={c}>{c === "(direct)" ? "(direct / sans campagne)" : c}</option>
-            ))}
+            {campaigns.map((c) => {
+              const label = c.name === "(direct)" ? "(direct / sans campagne)" : c.name;
+              const tag = c.sources.length ? ` — ${c.sources.join(" + ")}` : "";
+              return <option key={c.name} value={c.name}>{label}{tag}</option>;
+            })}
           </select>
           <div className="flex gap-1.5 rounded-xl border border-gray-200 bg-white p-1" data-testid="range-selector">
             {RANGES.map((r) => (
