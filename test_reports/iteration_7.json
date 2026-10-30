@@ -1,0 +1,42 @@
+{
+  "summary": "Verified per-site DOM meta tag override for the 3 landings (/, /defense, /livret) on the preview URL. All meta tags (title, description, og:title, og:description, og:site_name, twitter:title, twitter:description) correctly reflect the active site after JS runs. No Claude content leaks into Defense or Livret meta. Claude landing remains unchanged. All three pages render content (no white screen) and no console errors were observed.",
+  "backend_issues": {"critical": [], "minor": []},
+  "frontend_issues": {
+    "ui_bugs": [],
+    "integration_issues": [],
+    "design_issues": []
+  },
+  "test_results": {
+    "defense_/defense": {
+      "title": "Livret d'Épargne Défense — Vérifiez votre éligibilité",
+      "og_site_name": "Livret d'Épargne Défense",
+      "contains_claude": false,
+      "status": "PASS"
+    },
+    "livret_/livret": {
+      "title": "Super Livret — Compte rémunéré à 5 % net garanti",
+      "og_site_name": "Super Livret",
+      "contains_claude": false,
+      "status": "PASS"
+    },
+    "claude_/": {
+      "title": "Livret Claude — Demande d'informations gratuite et sans engagement",
+      "og_site_name": "Claude — Livret",
+      "status": "PASS (unchanged / regression OK)"
+    },
+    "rendering": "All three pages render body content (>4000 chars each). No white screen.",
+    "console_errors": "None"
+  },
+  "test_report_links": [],
+  "action_items": [],
+  "critical_code_review_comments": [
+    "defenseBase.js applySiteMeta correctly upserts meta tags; implementation is clean and side-effect scoped to document.head.",
+    "Note: static <head> in frontend/public/index.html still contains Claude-specific meta. This is fine for JS-executing scrapers (Google, ChatGPT browse, Meta AI with JS) but non-JS scrapers (basic curl-based crawlers, some social preview bots like old Facebook debugger) will still see Claude content for Defense/Livret pages. If SEO/social sharing of /defense and /livret matters for non-JS crawlers, server-side rendering or path-based static HTML is required. Not a bug for current scope, but worth flagging."
+  ],
+  "updated_files": [],
+  "success_rate": {"backend": "N/A (skipped)", "frontend": "100%"},
+  "seed_data_creation": "None",
+  "retest_needed": false,
+  "should_main_agent_self_test": false,
+  "context_for_next_testing_agent": "Meta tag override via JS verified on preview env. The fix in frontend/src/defenseBase.js (applyDefenseBranding / applyLivretBranding) works end-to-end. If future tests target non-JS crawlers or production hosts, consider SSR or static per-path HTML."
+}
