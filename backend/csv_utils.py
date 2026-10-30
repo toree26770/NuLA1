@@ -58,7 +58,7 @@ def build_leads_csv(leads, answers_by_lead, extra_labels):
     header = [
         "ID", "Date", "Heure", "Prénom", "Nom", "Date de naissance",
         "Téléphone", "E-mail", "Montant envisagé", "Consentement",
-        "Campagne", "Source", "Support", "Contenu", "Terme", "FBCLID",
+        "Campagne", "Provenance", "Source", "Support", "Contenu", "Terme", "FBCLID",
         "Statut", "Date de récupération",
     ] + list(extra_labels)
     writer.writerow(header)
@@ -76,6 +76,7 @@ def build_leads_csv(leads, answers_by_lead, extra_labels):
             csv_safe(lead.get("amount_range")),
             "Oui" if lead.get("consent") else "Non",
             csv_safe(lead.get("utm_campaign") or lead.get("campaign_id")),
+            csv_safe(lead.get("source_label")),
             csv_safe(lead.get("utm_source")),
             csv_safe(lead.get("utm_medium")),
             csv_safe(lead.get("utm_content")),
@@ -115,7 +116,7 @@ def build_partial_leads_csv(items):
         ["ID", "Première visite", "Heure", "Dernière activité", "Étape atteinte"]
         + [lbl for _, lbl in PARTIAL_KNOWN]
         + extra_keys
-        + ["Source", "Campagne"]
+        + ["Provenance", "Source", "Campagne"]
     )
     writer.writerow(header)
     for it in items:
@@ -135,6 +136,7 @@ def build_partial_leads_csv(items):
             row.append(csv_safe(v))
         for k in extra_keys:
             row.append(csv_safe(a.get(k, "")))
+        row.append(csv_safe(it.get("source_label")))
         row.append(csv_safe(it.get("utm_source")))
         row.append(csv_safe(it.get("utm_campaign")))
         writer.writerow(row)

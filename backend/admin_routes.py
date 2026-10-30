@@ -245,6 +245,10 @@ async def export_partial_leads():
     # « récupérés » : ils quittent la liste à traiter (comme les nouveaux leads).
     query = {"completed": {"$ne": True}, "recovered": {"$ne": True}}
     items = await db.partial_leads.find(query, {"_id": 0}).sort("updated_at", -1).to_list(100000)
+    pixels = await db.meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+    meta_camps, google_camps = campaign_sets(pixels, [])
+    for it in items:
+        it["source_label"] = source_label(it, meta_camps, google_camps)
     csv_bytes = build_partial_leads_csv(items)
     if items:
         await db.partial_leads.update_many(query, {"$set": {"recovered": True, "recovered_at": now_iso()}})
@@ -476,6 +480,10 @@ async def _collect_extra_labels(lead_ids):
 async def _render_batch_csv(batch):
     leads = await db.leads.find({"id": {"$in": batch["lead_ids"]}}, {"_id": 0}).sort("created_at", 1).to_list(len(batch["lead_ids"]))
     labels, answers_by_lead = await _collect_extra_labels(batch["lead_ids"])
+    pixels = await db.meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+    meta_camps, google_camps = campaign_sets(pixels, [])
+    for lead in leads:
+        lead["source_label"] = source_label(lead, meta_camps, google_camps)
     return build_leads_csv(leads, answers_by_lead, labels)
 
 
