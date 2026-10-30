@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useState } from "react";
 import { toast } from "sonner";
-import { Search, Download, Eye, Trash2, ChevronLeft, ChevronRight, FileDown } from "lucide-react";
+import { Search, Download, Eye, Trash2, ChevronLeft, ChevronRight, FileDown, ChevronDown } from "lucide-react";
 import { Sheet, SheetContent, SheetHeader, SheetTitle } from "@/components/ui/sheet";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { API, STATUS_LABELS, STATUS_COLORS, downloadBatch, fmtDateFr, fmtTimeFr, fmtError } from "@/api";
@@ -22,7 +22,9 @@ export default function LeadsPage({ status, title }) {
   const [data, setData] = useState({ leads: [], total: 0, page: 1, pages: 1 });
   const [page, setPage] = useState(1);
   const [q, setQ] = useState("");
-  const [campaign, setCampaign] = useState("");
+  const [campSel, setCampSel] = useState([]);
+  const [allCampaigns, setAllCampaigns] = useState([]);
+  const [campOpen, setCampOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [dateFrom, setDateFrom] = useState("");
   const [dateTo, setDateTo] = useState("");
@@ -47,13 +49,25 @@ export default function LeadsPage({ status, title }) {
 
   const load = useCallback(() => {
     API.get("/admin/leads", {
-      params: { status, q, campaign, amount, date_from: dateFrom, date_to: dateTo, page, limit: 25 },
+      params: { status, q, campaign: campSel.join(","), amount, date_from: dateFrom, date_to: dateTo, page, limit: 25 },
     })
       .then((r) => setData(r.data))
       .catch((e) => toast.error(fmtError(e)));
-  }, [status, q, campaign, amount, dateFrom, dateTo, page]);
+  }, [status, q, campSel, amount, dateFrom, dateTo, page]);
 
   useEffect(() => { load(); }, [load]);
+
+  // Liste des campagnes connues (leads + Pixels Meta + balises Google) pour le filtre.
+  useEffect(() => {
+    Promise.all([
+      API.get("/admin/campaigns").then((r) => (r.data.campaigns || []).map((c) => c.campaign)).catch(() => []),
+      API.get("/admin/pixels").then((r) => (r.data.items || []).flatMap((p) => p.campaigns || [])).catch(() => []),
+      API.get("/admin/google-tags").then((r) => (r.data.items || []).flatMap((t) => t.campaigns || [])).catch(() => []),
+    ]).then((arrs) => {
+      const set = new Set(arrs.flat().map((c) => (c || "").trim()).filter(Boolean));
+      setAllCampaigns([...set].sort());
+    });
+  }, []);
 
   const toggleSelect = (id) => {
     setSelected((prev) => {
@@ -67,9 +81,10 @@ export default function LeadsPage({ status, title }) {
     if (exporting) return;
     setExporting(true);
     try {
-      const res = await API.post("/admin/exports/new-leads");
+      const res = await API.post("/admin/exports/new-leads", { campaigns: campSel });
       await downloadBatch(res.data.id, `leads_lot_${String(res.data.batch_number).padStart(4, "0")}.csv`);
-      toast.success(`${res.data.lead_count} lead(s) exporté(s) et marqués comme récupérés.`);
+      const scope = campSel.length > 0 ? ` (campagnes : ${campSel.join(", ")})` : "";
+      toast.success(`${res.data.lead_count} lead(s) exporté(s)${scope} et marqués comme récupérés.`);
       setSelected(new Set());
       load();
     } catch (e) {
@@ -97,7 +112,7 @@ export default function LeadsPage({ status, title }) {
   const exportFiltered = async () => {
     try {
       const res = await API.post("/admin/exports/custom", {
-        filters: { status, campaign, date_from: dateFrom, date_to: dateTo },
+        filters: { status, campaign: campSel.join(","), date_from: dateFrom, date_to: dateTo },
       });
       await downloadBatch(res.data.id, `leads_filtres_lot_${String(res.data.batch_number).padStart(4, "0")}.csv`);
       toast.success(`${res.data.lead_count} lead(s) exporté(s).`);
@@ -133,7 +148,7 @@ export default function LeadsPage({ status, title }) {
         <div className="flex flex-wrap gap-2">
           {status === "nouveau" && (
             <button type="button" data-testid="export-new-leads-btn" onClick={exportNew} disabled={exporting} className="btn-primary-orange !py-2.5 !px-5 !text-sm disabled:opacity-60">
-              <Download className="h-4 w-4" /> {exporting ? "EXPORT…" : "EXPORTER LES NOUVEAUX LEADS — CSV"}
+              <Download className="h-4 w-4" /> {exporting ? "EXPORT…" : (campSel.length > 0 ? `EXPORTER ${campSel.length} CAMPAGNE(S) — CSV` : "EXPORTER TOUS LES NOUVEAUX — CSV")}
             </button>
           )}
           {selected.size > 0 && (
@@ -164,7 +179,42 @@ export default function LeadsPage({ status, title }) {
             onChange={(e) => { setQ(e.target.value); setPage(1); }}
           />
         </div>
-        <input data-testid="filter-campaign" className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#FF683D]" placeholder="Campagne" value={campaign} onChange={(e) => { setCampaign(e.target.value); setPage(1); }} />
+        <div className="relative" data-testid="filter-campaign-wrap">
+          <button type="button" data-testid="filter-campaign-btn" onClick={() => setCampOpen((o) => !o)} className="flex items-center justify-between gap-2 rounded-lg border border-gray-200 px-3 py-2.5 text-sm text-gray-700 hover:bg-gray-50 min-w-[190px]">
+            <span className="truncate">{campSel.length === 0 ? "Toutes les campagnes" : `${campSel.length} campagne(s)`}</span>
+            <ChevronDown className="h-4 w-4 text-gray-400 shrink-0" />
+          </button>
+          {campOpen && (
+            <>
+              <div className="fixed inset-0 z-10" onClick={() => setCampOpen(false)} />
+              <div className="absolute z-20 mt-1 w-64 max-h-72 overflow-auto rounded-xl border border-gray-200 bg-white p-2 shadow-lg" data-testid="filter-campaign-panel">
+                {allCampaigns.length === 0 ? (
+                  <p className="px-2 py-3 text-xs text-gray-400">Aucune campagne connue. Ajoutez des campagnes dans vos Pixels/balises, ou recevez du trafic avec <code>?campaign=…</code>.</p>
+                ) : (
+                  <>
+                    <button type="button" data-testid="campaign-clear-btn" onClick={() => { setCampSel([]); setPage(1); }} className="w-full rounded-md px-2 py-1.5 text-left text-xs font-semibold text-[#FF683D] hover:bg-gray-50">
+                      Tout désélectionner
+                    </button>
+                    {allCampaigns.map((c) => {
+                      const checked = campSel.includes(c);
+                      return (
+                        <label key={c} data-testid={`campaign-opt-${c}`} className="flex items-center gap-2 rounded-md px-2 py-1.5 text-sm cursor-pointer hover:bg-gray-50">
+                          <input
+                            type="checkbox"
+                            checked={checked}
+                            onChange={() => { setCampSel((prev) => (checked ? prev.filter((x) => x !== c) : [...prev, c])); setPage(1); }}
+                            className="h-4 w-4 accent-[#FF683D]"
+                          />
+                          <span className="truncate">{c}</span>
+                        </label>
+                      );
+                    })}
+                  </>
+                )}
+              </div>
+            </>
+          )}
+        </div>
         <select data-testid="filter-amount" className="rounded-lg border border-gray-200 px-3 py-2.5 text-sm outline-none focus:ring-2 focus:ring-[#FF683D]" value={amount} onChange={(e) => { setAmount(e.target.value); setPage(1); }}>
           <option value="">Tous les montants</option>
           {AMOUNTS.map((a) => <option key={a} value={a}>{a}</option>)}

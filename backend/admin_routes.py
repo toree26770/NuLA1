@@ -12,6 +12,25 @@ router = APIRouter(prefix="/admin", tags=["admin"], dependencies=[Depends(get_cu
 
 LEAD_STATUSES = ["nouveau", "recupere", "traite", "doublon", "invalide"]
 
+
+def _campaign_clause(camps):
+    """Clause Mongo pour filtrer par campagne(s). '(direct)' cible les leads sans campagne."""
+    direct = "(direct)" in camps
+    named = [c for c in camps if c and c != "(direct)"]
+    ors = []
+    if named:
+        ors.append({"utm_campaign": {"$in": named}})
+        ors.append({"campaign_id": {"$in": named}})
+    if direct:
+        ors.append({
+            "$and": [
+                {"$or": [{"utm_campaign": ""}, {"utm_campaign": {"$exists": False}}, {"utm_campaign": None}]},
+                {"$or": [{"campaign_id": ""}, {"campaign_id": {"$exists": False}}, {"campaign_id": None}]},
+            ]
+        })
+    return {"$or": ors} if ors else None
+
+
 # Normalise la campagne pour les regroupements : null, champ absent OU chaîne vide -> "(direct)".
 CAMPAIGN_LABEL = {
     "$let": {
@@ -165,10 +184,14 @@ async def list_leads(
     limit: int = Query(25, ge=1, le=200),
 ):
     query = {}
+    and_clauses = []
     if status in LEAD_STATUSES:
         query["status"] = status
-    if campaign:
-        query["$or"] = [{"utm_campaign": campaign}, {"campaign_id": campaign}]
+    camps = [c.strip() for c in campaign.split(",") if c.strip()] if campaign else []
+    if camps:
+        _clause = _campaign_clause(camps)
+        if _clause:
+            and_clauses.append(_clause)
     if amount:
         query["amount_range"] = amount
     if date_from:
@@ -177,12 +200,14 @@ async def list_leads(
         query.setdefault("created_at", {})["$lte"] = date_to + "T23:59:59"
     if q:
         q = q.strip()
-        query["$or"] = [
+        and_clauses.append({"$or": [
             {"first_name": {"$regex": q, "$options": "i"}},
             {"last_name": {"$regex": q, "$options": "i"}},
             {"email_normalized": {"$regex": q, "$options": "i"}},
             {"phone_e164": {"$regex": q.replace(" ", "")}},
-        ]
+        ]})
+    if and_clauses:
+        query["$and"] = and_clauses
     total = await db.leads.count_documents(query)
     leads = await db.leads.find(query, {"_id": 0}).sort("created_at", -1).skip((page - 1) * limit).limit(limit).to_list(limit)
     return {"leads": leads, "total": total, "page": page, "pages": max(1, (total + limit - 1) // limit)}
@@ -442,14 +467,24 @@ async def _render_batch_csv(batch):
     return build_leads_csv(leads, answers_by_lead, labels)
 
 
+class NewLeadsExport(BaseModel):
+    campaigns: list = []
+
+
 @router.post("/exports/new-leads")
-async def export_new_leads(admin=Depends(get_current_admin)):
+async def export_new_leads(body: NewLeadsExport = NewLeadsExport(), admin=Depends(get_current_admin)):
     pending = await db.export_batches.find_one({"status": "pending"})
     if pending:
         raise HTTPException(status_code=409, detail="Un export est déjà en attente de téléchargement", headers={"X-Batch-Id": pending["id"]})
-    leads = await db.leads.find({"status": "nouveau"}, {"_id": 0, "id": 1}).sort("created_at", 1).to_list(5000)
+    lead_q = {"status": "nouveau"}
+    camps = [str(c).strip() for c in (body.campaigns or []) if str(c).strip()]
+    if camps:
+        _clause = _campaign_clause(camps)
+        if _clause:
+            lead_q["$and"] = [_clause]
+    leads = await db.leads.find(lead_q, {"_id": 0, "id": 1}).sort("created_at", 1).to_list(5000)
     if not leads:
-        raise HTTPException(status_code=400, detail="Aucun nouveau lead à exporter")
+        raise HTTPException(status_code=400, detail="Aucun nouveau lead à exporter pour cette sélection")
     count = await db.export_batches.count_documents({})
     batch = {
         "id": new_id(),
@@ -460,6 +495,7 @@ async def export_new_leads(admin=Depends(get_current_admin)):
         "status": "pending",
         "lead_count": len(leads),
         "lead_ids": [l["id"] for l in leads],
+        "campaigns": camps,
     }
     await db.export_batches.insert_one(batch)
     batch.pop("_id", None)
@@ -482,7 +518,10 @@ async def export_custom(body: CustomExport, admin=Depends(get_current_admin)):
         if f.get("status") in LEAD_STATUSES:
             query["status"] = f["status"]
         if f.get("campaign"):
-            query["$or"] = [{"utm_campaign": f["campaign"]}, {"campaign_id": f["campaign"]}]
+            _camps = [c.strip() for c in str(f["campaign"]).split(",") if c.strip()]
+            _clause = _campaign_clause(_camps)
+            if _clause:
+                query["$and"] = [_clause]
         if f.get("date_from"):
             query.setdefault("created_at", {})["$gte"] = f["date_from"]
         if f.get("date_to"):
