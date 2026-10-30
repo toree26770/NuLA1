@@ -340,17 +340,17 @@ function EligibilityForm({ idPrefix = "defense", form, content }) {
 // Taux NETS utilisés pour la simulation (modifiables ici). Le taux Défense est
 // celui mis en avant par l'offre ; les autres servent de comparaison indicative.
 const SIM_PRODUCTS = [
-  { key: "defense", name: "Livret d'Épargne Défense", short: "Militaire", rate: 7.10, rateLabel: "7,10", highlight: true, interets: "Mensuels", libre: true, dispo: true, garanti: true, booste: true },
-  { key: "livretA", name: "Livret A", short: "Livret A", rate: 1.7, rateLabel: "1,7", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
-  { key: "assurancevie", name: "Assurance-vie (fonds €)", short: "Assurance-vie", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
-  { key: "classique", name: "Livret bancaire classique", short: "Livret classique", rate: 1.0, rateLabel: "1", interets: "Annuels", libre: true, dispo: true, garanti: true, booste: false },
+  { key: "defense", name: "Livret d'Épargne Défense", short: "Militaire", rate: 7.10, rateLabel: "7,10", highlight: true, interets: "Mensuels", libre: true, dispo: "À tout moment", garanti: true, booste: true },
+  { key: "livretA", name: "Livret A", short: "Livret A", rate: 1.7, rateLabel: "1,7", interets: "Annuels", libre: true, dispo: "À tout moment", garanti: true, booste: false },
+  { key: "assurancevie", name: "Assurance-vie (fonds €)", short: "Assurance-vie", rate: 2.4, rateLabel: "2,4", interets: "Annuels", libre: true, dispo: "Sous quelques jours", garanti: true, booste: false },
+  { key: "classique", name: "Livret bancaire classique", short: "Livret classique", rate: 1.0, rateLabel: "1", interets: "Annuels", libre: true, dispo: "À tout moment", garanti: true, booste: false },
 ];
 
 // Caractéristiques comparées, dans l'ordre d'affichage.
 const SIM_FEATURE_ROWS = [
   { key: "interets", label: "Versement des intérêts", type: "text" },
   { key: "libre", label: "Versement libre", type: "bool" },
-  { key: "dispo", label: "Disponible à tout moment", type: "bool" },
+  { key: "dispo", label: "Disponibilité des fonds", type: "text" },
   { key: "garanti", label: "Capital garanti", type: "bool" },
   { key: "booste", label: "Taux boosté réservé", type: "bool" },
 ];
@@ -492,7 +492,7 @@ function YieldSimulator() {
                         <li key={f.key} className="flex items-center justify-between gap-2 text-sm">
                           <span className={hl ? "text-white/80" : "text-[#3A4A5E]"}>{f.label}</span>
                           {f.type === "text" ? (
-                            <span className={`font-semibold ${hl ? "text-[#FFD700]" : "text-[#071D3A]"}`}>{val}</span>
+                            <span className={`text-right text-xs font-semibold leading-tight ${hl ? "text-[#FFD700]" : "text-[#071D3A]"}`}>{val}</span>
                           ) : val ? (
                             <span className={`flex h-5 w-5 shrink-0 items-center justify-center rounded-full ${hl ? "bg-[#C8102E]" : "bg-[#16A34A]/10"}`}>
                               <Check className={`h-3.5 w-3.5 ${hl ? "text-white" : "text-[#16A34A]"}`} strokeWidth={3} />
