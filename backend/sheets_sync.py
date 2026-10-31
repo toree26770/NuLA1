@@ -67,7 +67,6 @@ def complete_row(lead, source_label=""):
         "Email": lead.get("email_normalized", ""),
         "Date de naissance": fmt_date_fr(lead.get("birth_date")) if lead.get("birth_date") else "",
         "Montant envisagé": lead.get("amount_range", ""),
-        "Consentement": "Oui" if lead.get("consent") else "Non",
         "Campagne": lead.get("utm_campaign") or lead.get("campaign") or "",
         "Provenance": source_label or "",
         "Statut": lead.get("status", ""),

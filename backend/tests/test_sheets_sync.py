@@ -30,7 +30,6 @@ def test_complete_row():
     row = sheets_sync.complete_row(lead, "Meta")
     assert row["ID"] == "L1"
     assert row["Prénom"] == "Jean"
-    assert row["Consentement"] == "Oui"
     assert row["Campagne"] == "bm4"
     assert row["Provenance"] == "Meta"
     assert row["Statut"] == "nouveau"

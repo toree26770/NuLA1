@@ -57,7 +57,7 @@ def build_leads_csv(leads, answers_by_lead, extra_labels):
     writer = csv.writer(output, delimiter=";", quoting=csv.QUOTE_ALL, lineterminator="\r\n")
     header = [
         "ID", "Date", "Heure", "Prénom", "Nom", "Date de naissance",
-        "Téléphone", "E-mail", "Montant envisagé", "Consentement",
+        "Téléphone", "E-mail", "Montant envisagé",
         "Campagne", "Provenance", "Source", "Support", "Contenu", "Terme", "FBCLID",
         "Statut", "Date de récupération",
     ] + list(extra_labels)
@@ -74,7 +74,6 @@ def build_leads_csv(leads, answers_by_lead, extra_labels):
             csv_safe(lead.get("phone_e164")),
             csv_safe(lead.get("email_normalized")),
             csv_safe(lead.get("amount_range")),
-            "Oui" if lead.get("consent") else "Non",
             csv_safe(lead.get("utm_campaign") or lead.get("campaign_id")),
             csv_safe(lead.get("source_label")),
             csv_safe(lead.get("utm_source")),
