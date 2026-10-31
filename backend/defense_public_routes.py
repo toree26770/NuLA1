@@ -408,7 +408,10 @@ async def submit_lead(body: LeadSubmit, request: Request):
 
     # Marque la capture partielle comme complétée (retirée des leads incomplets)
     sid = clean_text(meta.get("session_id"), 80)
+    partial_id = None
     if sid:
+        partial = await db.defense_partial_leads.find_one({"session_id": sid}, {"_id": 0, "id": 1})
+        partial_id = partial["id"] if partial else None
         await db.defense_partial_leads.update_one(
             {"session_id": sid},
             {"$set": {"completed": True, "completed_lead_id": lead_id, "updated_at": now_iso()}},
@@ -418,5 +421,8 @@ async def submit_lead(body: LeadSubmit, request: Request):
     if sheets_sync.enabled(settings):
         sl = await _defense_source(lead_doc)
         sheets_sync.fire(settings, "complete", sheets_sync.complete_row(lead_doc, sl))
+        # Retire la ligne de l'onglet « Leads incomplets » (le lead est désormais complet)
+        if partial_id:
+            sheets_sync.fire(settings, "incomplete", {"ID": partial_id}, action="delete")
 
     return {"ok": True, "lead_id": lead_id, "duplicate": bool(duplicate_of)}

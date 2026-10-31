@@ -38,12 +38,15 @@ async def _post(url, payload):
         log.warning("Sheet sync failed: %s", e)
 
 
-def fire(settings, kind, row):
-    """Envoie une ligne au Sheet sans bloquer. kind = 'complete' | 'incomplete'."""
+def fire(settings, kind, row, action=None):
+    """Envoie une ligne au Sheet sans bloquer. kind = 'complete' | 'incomplete'.
+    action='delete' pour supprimer la ligne correspondante (match par 'ID')."""
     url = enabled(settings)
     if not url:
         return
     payload = {"type": kind, "row": row}
+    if action:
+        payload["action"] = action
     try:
         asyncio.create_task(_post(url, payload))
     except RuntimeError:

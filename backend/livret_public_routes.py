@@ -369,7 +369,10 @@ async def submit_lead(body: LeadSubmit, request: Request):
 
     # Marque la capture partielle comme complétée (retirée des leads incomplets)
     sid = clean_text(meta.get("session_id"), 80)
+    partial_id = None
     if sid:
+        partial = await db.livret_partial_leads.find_one({"session_id": sid}, {"_id": 0, "id": 1})
+        partial_id = partial["id"] if partial else None
         await db.livret_partial_leads.update_one(
             {"session_id": sid},
             {"$set": {"completed": True, "completed_lead_id": lead_id, "updated_at": now_iso()}},
@@ -380,5 +383,7 @@ async def submit_lead(body: LeadSubmit, request: Request):
         pixels = await db.livret_meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
         mc, gc = campaign_sets(pixels, [])
         sheets_sync.fire(settings, "complete", sheets_sync.complete_row(lead_doc, _src_label(lead_doc, mc, gc)))
+        if partial_id:
+            sheets_sync.fire(settings, "incomplete", {"ID": partial_id}, action="delete")
 
     return {"ok": True, "lead_id": lead_id, "duplicate": bool(duplicate_of)}

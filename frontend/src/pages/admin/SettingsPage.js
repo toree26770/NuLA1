@@ -19,6 +19,26 @@ function doPost(e) {
     var ss = SpreadsheetApp.getActiveSpreadsheet();
     var sheet = ss.getSheetByName(tab) || ss.insertSheet(tab);
 
+    // Suppression (lead complété : on retire sa ligne de l'onglet incomplets)
+    if (body.action === "delete") {
+      var delId = row["ID"];
+      if (delId) {
+        var lc = sheet.getLastColumn();
+        var hs = lc > 0 ? sheet.getRange(1, 1, 1, lc).getValues()[0] : [];
+        var ic = hs.indexOf("ID");
+        if (ic !== -1) {
+          var lr = sheet.getLastRow();
+          if (lr >= 2) {
+            var ids2 = sheet.getRange(2, ic + 1, lr - 1, 1).getValues();
+            for (var j = 0; j < ids2.length; j++) {
+              if (String(ids2[j][0]) === String(delId)) { sheet.deleteRow(j + 2); break; }
+            }
+          }
+        }
+      }
+      return ContentService.createTextOutput(JSON.stringify({ ok: true, deleted: true })).setMimeType(ContentService.MimeType.JSON);
+    }
+
     var keys = Object.keys(row);
     var lastCol = sheet.getLastColumn();
     var headers = lastCol > 0 ? sheet.getRange(1, 1, 1, lastCol).getValues()[0] : [];
