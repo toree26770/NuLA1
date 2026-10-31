@@ -9,6 +9,7 @@ from csv_utils import FIXED_KEYS, build_leads_csv, build_partial_leads_csv
 from database import db, new_id, now_iso
 from defense_db import get_settings
 from source_utils import campaign_sets, source_label
+import sheets_sync
 
 router = APIRouter(prefix="/defense/admin", tags=["defense-admin"], dependencies=[Depends(get_current_admin)])
 
@@ -389,6 +390,7 @@ async def admin_put_settings(body: dict):
                 raise HTTPException(status_code=400, detail=f"Valeur invalide pour {key}")
     if "consent_version" in body:
         allowed["consent_version"] = str(body["consent_version"])[:50]
+    allowed.update(sheets_sync.parse_settings(body))
     await db.defense_settings.update_one({"key": "settings"}, {"$set": allowed}, upsert=True)
     return {"ok": True}
 

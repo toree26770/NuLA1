@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from database import db, new_id, now_iso
 from defense_db import get_settings, log_security
+import sheets_sync
+from source_utils import campaign_sets, source_label as _src_label
 from validators import (
     clean_text,
     normalize_email,
@@ -129,6 +131,13 @@ async def track_event(body: TrackEvent, request: Request):
     return {"ok": True}
 
 
+async def _defense_source(lead):
+    pixels = await db.defense_meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+    tags = await db.defense_google_tags.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+    mc, gc = campaign_sets(pixels, tags)
+    return _src_label(lead, mc, gc)
+
+
 class PartialLeadBody(BaseModel):
     session_id: str
     answers: dict = {}
@@ -188,6 +197,13 @@ async def save_partial_lead(body: PartialLeadBody, request: Request):
         },
         upsert=True,
     )
+    # Sauvegarde Google Sheet (onglet « Leads incomplets »), non bloquant.
+    settings = await get_settings()
+    if sheets_sync.enabled(settings):
+        doc = await db.defense_partial_leads.find_one({"session_id": sid}, {"_id": 0})
+        if doc:
+            sl = await _defense_source(doc)
+            sheets_sync.fire(settings, "incomplete", sheets_sync.incomplete_row(doc, sl))
     return {"ok": True}
 
 
@@ -397,5 +413,10 @@ async def submit_lead(body: LeadSubmit, request: Request):
             {"session_id": sid},
             {"$set": {"completed": True, "completed_lead_id": lead_id, "updated_at": now_iso()}},
         )
+
+    # Sauvegarde Google Sheet (onglet « Leads complets »), non bloquant.
+    if sheets_sync.enabled(settings):
+        sl = await _defense_source(lead_doc)
+        sheets_sync.fire(settings, "complete", sheets_sync.complete_row(lead_doc, sl))
 
     return {"ok": True, "lead_id": lead_id, "duplicate": bool(duplicate_of)}

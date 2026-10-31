@@ -6,6 +6,8 @@ from pydantic import BaseModel
 
 from database import db, new_id, now_iso
 from livret_db import get_settings, log_security
+import sheets_sync
+from source_utils import campaign_sets, source_label as _src_label
 from validators import (
     clean_text,
     normalize_email,
@@ -156,6 +158,13 @@ async def save_partial_lead(body: PartialLeadBody, request: Request):
         },
         upsert=True,
     )
+    settings = await get_settings()
+    if sheets_sync.enabled(settings):
+        doc = await db.livret_partial_leads.find_one({"session_id": sid}, {"_id": 0})
+        if doc:
+            pixels = await db.livret_meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+            mc, gc = campaign_sets(pixels, [])
+            sheets_sync.fire(settings, "incomplete", sheets_sync.incomplete_row(doc, _src_label(doc, mc, gc)))
     return {"ok": True}
 
 
@@ -365,5 +374,11 @@ async def submit_lead(body: LeadSubmit, request: Request):
             {"session_id": sid},
             {"$set": {"completed": True, "completed_lead_id": lead_id, "updated_at": now_iso()}},
         )
+
+    # Sauvegarde Google Sheet (onglet « Leads complets »), non bloquant.
+    if sheets_sync.enabled(settings):
+        pixels = await db.livret_meta_pixels.find({}, {"_id": 0, "campaigns": 1, "enabled": 1}).to_list(500)
+        mc, gc = campaign_sets(pixels, [])
+        sheets_sync.fire(settings, "complete", sheets_sync.complete_row(lead_doc, _src_label(lead_doc, mc, gc)))
 
     return {"ok": True, "lead_id": lead_id, "duplicate": bool(duplicate_of)}
