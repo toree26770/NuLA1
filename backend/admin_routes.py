@@ -526,6 +526,7 @@ async def export_new_leads(body: NewLeadsExport = NewLeadsExport(), admin=Depend
 class CustomExport(BaseModel):
     lead_ids: list = []
     filters: dict = {}
+    mark_recovered: bool = False
 
 
 @router.post("/exports/custom")
@@ -549,6 +550,7 @@ async def export_custom(body: CustomExport, admin=Depends(get_current_admin)):
         leads = await db.leads.find(query, {"_id": 0, "id": 1}).sort("created_at", 1).to_list(10000)
     if not leads:
         raise HTTPException(status_code=400, detail="Aucun lead correspondant")
+    lead_ids = [l["id"] for l in leads]
     count = await db.export_batches.count_documents({})
     batch = {
         "id": new_id(),
@@ -558,11 +560,18 @@ async def export_custom(body: CustomExport, admin=Depends(get_current_admin)):
         "created_by": admin["email"],
         "status": "downloaded",
         "lead_count": len(leads),
-        "lead_ids": [l["id"] for l in leads],
+        "lead_ids": lead_ids,
         "filters": body.filters or {},
     }
     await db.export_batches.insert_one(batch)
-    return {"id": batch["id"], "batch_number": batch["batch_number"], "lead_count": batch["lead_count"]}
+    recovered = 0
+    if body.mark_recovered:
+        res = await db.leads.update_many(
+            {"id": {"$in": lead_ids}, "status": "nouveau"},
+            {"$set": {"status": "recupere", "retrieved_at": now_iso(), "export_batch_id": batch["id"], "updated_at": now_iso()}},
+        )
+        recovered = res.modified_count
+    return {"id": batch["id"], "batch_number": batch["batch_number"], "lead_count": batch["lead_count"], "recovered": recovered}
 
 
 @router.get("/exports")

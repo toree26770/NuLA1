@@ -101,22 +101,33 @@ export default function LeadsPage({ status, title }) {
 
   const exportSelection = async () => {
     if (selected.size === 0) return;
+    const markRecovered = status === "nouveau";
     try {
-      const res = await API.post("/admin/exports/custom", { lead_ids: [...selected] });
+      const res = await API.post("/admin/exports/custom", { lead_ids: [...selected], mark_recovered: markRecovered });
       await downloadBatch(res.data.id, `leads_selection_lot_${String(res.data.batch_number).padStart(4, "0")}.csv`);
-      toast.success(`${res.data.lead_count} lead(s) exporté(s).`);
+      toast.success(markRecovered
+        ? `${res.data.lead_count} lead(s) exporté(s) et marqués comme récupérés.`
+        : `${res.data.lead_count} lead(s) exporté(s).`);
+      setSelected(new Set());
+      if (markRecovered) load();
     } catch (e) {
       toast.error(fmtError(e));
     }
   };
 
   const exportFiltered = async () => {
+    const markRecovered = status === "nouveau";
     try {
       const res = await API.post("/admin/exports/custom", {
         filters: { status, campaign: campSel.join(","), date_from: dateFrom, date_to: dateTo },
+        mark_recovered: markRecovered,
       });
       await downloadBatch(res.data.id, `leads_filtres_lot_${String(res.data.batch_number).padStart(4, "0")}.csv`);
-      toast.success(`${res.data.lead_count} lead(s) exporté(s).`);
+      toast.success(markRecovered
+        ? `${res.data.lead_count} lead(s) exporté(s) et marqués comme récupérés.`
+        : `${res.data.lead_count} lead(s) exporté(s).`);
+      setSelected(new Set());
+      if (markRecovered) load();
     } catch (e) {
       toast.error(fmtError(e));
     }
