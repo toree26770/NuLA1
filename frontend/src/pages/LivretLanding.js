@@ -4,7 +4,9 @@ import {
   TrendingUp, CreditCard, Clock, ShieldCheck, Check, ChevronDown, ArrowRight,
 } from "lucide-react";
 import { API, getSessionId, trackLivret } from "@/api";
-import { applyLivretBranding } from "@/defenseBase";
+import { applyLivretBranding, LIVRET_LANDING_PATH } from "@/defenseBase";
+import { Link } from "react-router-dom";
+import { legalHref } from "@/pages/legal/legalContent";
 import { loadPixels, trackSingle } from "@/metaPixel";
 
 const NAVY = "#0B1B3A";
@@ -576,6 +578,11 @@ export default function LivretLanding() {
           <p className="mx-auto max-w-2xl text-xs leading-relaxed text-white/45">
             {content?.brand?.footer_line || "Demande d'informations gratuite et sans engagement."} Les taux et conditions présentés sont fournis à titre indicatif et non contractuel. Un conseiller pourra vous recontacter pour vous présenter l'offre, ses conditions et ses modalités.
           </p>
+          <div className="mt-5 flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs text-white/55">
+            <Link to={legalHref(LIVRET_LANDING_PATH, "mentions")} className="hover:text-white" data-testid="footer-mentions-legales">Mentions légales</Link>
+            <Link to={legalHref(LIVRET_LANDING_PATH, "politique")} className="hover:text-white" data-testid="footer-politique-confidentialite">Politique de confidentialité</Link>
+            <Link to={legalHref(LIVRET_LANDING_PATH, "cookies")} className="hover:text-white" data-testid="footer-cookies">Gestion des cookies</Link>
+          </div>
         </div>
       </footer>
 

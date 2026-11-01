@@ -7,6 +7,7 @@ import {
 import { API, getSessionId, trackDefense } from "@/api";
 import { applyDefenseBranding, DEFENSE_LANDING_PATH } from "@/defenseBase";
 import { Link } from "react-router-dom";
+import { legalHref } from "@/pages/legal/legalContent";
 import { loadPixels, trackSingle } from "@/metaPixel";
 import { loadGoogleTags, trackGoogleConversion } from "@/googleTag";
 
@@ -805,10 +806,9 @@ export default function DefenseLanding() {
           <div>
             <p className="font-semibold text-white">Légal</p>
             <ul className="mt-3 space-y-2 text-white/55">
-              <li><Link to={DEFENSE_LANDING_PATH === "/" ? "/mentions-legales" : `${DEFENSE_LANDING_PATH}/mentions-legales`} className="hover:text-white" data-testid="footer-mentions-legales">Mentions légales</Link></li>
-              <li><Link to={DEFENSE_LANDING_PATH === "/" ? "/politique-confidentialite" : `${DEFENSE_LANDING_PATH}/politique-confidentialite`} className="hover:text-white" data-testid="footer-politique-confidentialite">Politique de confidentialité</Link></li>
-              <li>Gestion des cookies</li>
-              <li>Conditions générales</li>
+              <li><Link to={legalHref(DEFENSE_LANDING_PATH, "mentions")} className="hover:text-white" data-testid="footer-mentions-legales">Mentions légales</Link></li>
+              <li><Link to={legalHref(DEFENSE_LANDING_PATH, "politique")} className="hover:text-white" data-testid="footer-politique-confidentialite">Politique de confidentialité</Link></li>
+              <li><Link to={legalHref(DEFENSE_LANDING_PATH, "cookies")} className="hover:text-white" data-testid="footer-cookies">Gestion des cookies</Link></li>
             </ul>
           </div>
           <div>

@@ -10,6 +10,8 @@ import {
   ArrowRight, ArrowDown, Asterisk, ShieldCheck, Coins, RefreshCcw, FileText, Gift, Clock3, CheckCircle2,
 } from "lucide-react";
 import { API, trackEvent } from "@/api";
+import { Link } from "react-router-dom";
+import { legalHref } from "@/pages/legal/legalContent";
 import { loadPixels, trackSingle } from "@/metaPixel";
 import ConsentBanner from "@/components/ConsentBanner";
 import DynamicForm from "@/components/DynamicForm";
@@ -458,12 +460,15 @@ export default function LandingPage() {
           </div>
           <p className="text-sm text-[#F8F6F2]/55 mb-6">{brand?.footer_line}</p>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm" id="confidentialite">
-            <button type="button" data-testid="footer-mentions-btn" onClick={() => setLegalDialog("mentions")} className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
+            <Link to={legalHref("/", "mentions")} data-testid="footer-mentions-btn" className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
               Mentions légales
-            </button>
-            <button type="button" data-testid="footer-privacy-btn" onClick={() => setLegalDialog("privacy")} className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
+            </Link>
+            <Link to={legalHref("/", "politique")} data-testid="footer-privacy-btn" className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
               Politique de confidentialité
-            </button>
+            </Link>
+            <Link to={legalHref("/", "cookies")} data-testid="footer-cookies" className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
+              Gestion des cookies
+            </Link>
           </div>
           <p className="mt-6 text-xs leading-relaxed text-[#F8F6F2]/40 max-w-3xl">
             Cette page est une demande d'informations. Elle ne constitue ni une offre de souscription, ni un conseil en investissement. Tout investissement comporte des risques : les caractéristiques, conditions et risques de toute offre sont présentés dans ses documents contractuels.
