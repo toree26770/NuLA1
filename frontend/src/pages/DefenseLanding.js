@@ -806,7 +806,7 @@ export default function DefenseLanding() {
             <p className="font-semibold text-white">Légal</p>
             <ul className="mt-3 space-y-2 text-white/55">
               <li><Link to={DEFENSE_LANDING_PATH === "/" ? "/mentions-legales" : `${DEFENSE_LANDING_PATH}/mentions-legales`} className="hover:text-white" data-testid="footer-mentions-legales">Mentions légales</Link></li>
-              <li>Politique de confidentialité</li>
+              <li><Link to={DEFENSE_LANDING_PATH === "/" ? "/politique-confidentialite" : `${DEFENSE_LANDING_PATH}/politique-confidentialite`} className="hover:text-white" data-testid="footer-politique-confidentialite">Politique de confidentialité</Link></li>
               <li>Gestion des cookies</li>
               <li>Conditions générales</li>
             </ul>

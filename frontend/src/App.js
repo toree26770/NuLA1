@@ -4,6 +4,7 @@ import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "@/pages/LandingPage";
 import DefenseLanding from "@/pages/DefenseLanding";
 import DefenseMentionsLegales from "@/pages/DefenseMentionsLegales";
+import DefensePolitiqueConfidentialite from "@/pages/DefensePolitiqueConfidentialite";
 import LivretLanding from "@/pages/LivretLanding";
 import AdminLogin from "@/pages/admin/Login";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -45,6 +46,7 @@ function DefenseRoutes() {
     <>
       <Route path={DEFENSE_LANDING_PATH} element={<DefenseLanding />} />
       <Route path={DEFENSE_LANDING_PATH === "/" ? "/mentions-legales" : `${DEFENSE_LANDING_PATH}/mentions-legales`} element={<DefenseMentionsLegales />} />
+      <Route path={DEFENSE_LANDING_PATH === "/" ? "/politique-confidentialite" : `${DEFENSE_LANDING_PATH}/politique-confidentialite`} element={<DefensePolitiqueConfidentialite />} />
       <Route path={`${DEFENSE_ADMIN_BASE}/login`} element={<AdminLogin />} />
       <Route path={DEFENSE_ADMIN_BASE} element={<AdminLayout />}>
         {AdminChildren()}
