@@ -3,6 +3,7 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "@/pages/LandingPage";
 import DefenseLanding from "@/pages/DefenseLanding";
+import DefenseMentionsLegales from "@/pages/DefenseMentionsLegales";
 import LivretLanding from "@/pages/LivretLanding";
 import AdminLogin from "@/pages/admin/Login";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -43,6 +44,7 @@ function DefenseRoutes() {
   return (
     <>
       <Route path={DEFENSE_LANDING_PATH} element={<DefenseLanding />} />
+      <Route path={DEFENSE_LANDING_PATH === "/" ? "/mentions-legales" : `${DEFENSE_LANDING_PATH}/mentions-legales`} element={<DefenseMentionsLegales />} />
       <Route path={`${DEFENSE_ADMIN_BASE}/login`} element={<AdminLogin />} />
       <Route path={DEFENSE_ADMIN_BASE} element={<AdminLayout />}>
         {AdminChildren()}

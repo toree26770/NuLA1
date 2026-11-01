@@ -5,7 +5,8 @@ import {
   ChevronDown, Check, ArrowRight, Calculator,
 } from "lucide-react";
 import { API, getSessionId, trackDefense } from "@/api";
-import { applyDefenseBranding } from "@/defenseBase";
+import { applyDefenseBranding, DEFENSE_LANDING_PATH } from "@/defenseBase";
+import { Link } from "react-router-dom";
 import { loadPixels, trackSingle } from "@/metaPixel";
 import { loadGoogleTags, trackGoogleConversion } from "@/googleTag";
 
@@ -804,7 +805,7 @@ export default function DefenseLanding() {
           <div>
             <p className="font-semibold text-white">Légal</p>
             <ul className="mt-3 space-y-2 text-white/55">
-              <li>Mentions légales</li>
+              <li><Link to={DEFENSE_LANDING_PATH === "/" ? "/mentions-legales" : `${DEFENSE_LANDING_PATH}/mentions-legales`} className="hover:text-white" data-testid="footer-mentions-legales">Mentions légales</Link></li>
               <li>Politique de confidentialité</li>
               <li>Gestion des cookies</li>
               <li>Conditions générales</li>
