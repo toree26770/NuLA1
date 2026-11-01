@@ -4,14 +4,10 @@ import {
   Accordion, AccordionContent, AccordionItem, AccordionTrigger,
 } from "@/components/ui/accordion";
 import {
-  Dialog, DialogContent, DialogHeader, DialogTitle,
-} from "@/components/ui/dialog";
-import {
   ArrowRight, ArrowDown, Asterisk, ShieldCheck, Coins, RefreshCcw, FileText, Gift, Clock3, CheckCircle2,
 } from "lucide-react";
 import { API, trackEvent } from "@/api";
-import { Link } from "react-router-dom";
-import { legalHref } from "@/pages/legal/legalContent";
+import { LegalLinks } from "@/components/LegalLinks";
 import { loadPixels, trackSingle } from "@/metaPixel";
 import ConsentBanner from "@/components/ConsentBanner";
 import DynamicForm from "@/components/DynamicForm";
@@ -133,7 +129,6 @@ const fadeUp = {
 export default function LandingPage() {
   const [content, setContent] = useState(null);
   const [form, setForm] = useState(null);
-  const [legalDialog, setLegalDialog] = useState("");
   const formRef = useRef(null);
   const tracking = useTrackingParams();
   const campaign = useCampaign();
@@ -181,7 +176,7 @@ export default function LandingPage() {
     );
   }
 
-  const { hero, offer, curiosity, advantages, how, reassurance, faq, form_texts, final_cta, legal, brand } = content;
+  const { hero, offer, curiosity, advantages, how, reassurance, faq, form_texts, final_cta, brand } = content;
 
   const CtaButton = ({ label, testid, className = "" }) => (
     <button type="button" data-testid={testid} onClick={scrollToForm} className={`btn-primary-orange ${className}`}>
@@ -460,34 +455,13 @@ export default function LandingPage() {
           </div>
           <p className="text-sm text-[#F8F6F2]/55 mb-6">{brand?.footer_line}</p>
           <div className="flex flex-wrap gap-x-6 gap-y-2 text-sm" id="confidentialite">
-            <Link to={legalHref("/", "mentions")} data-testid="footer-mentions-btn" className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
-              Mentions légales
-            </Link>
-            <Link to={legalHref("/", "politique")} data-testid="footer-privacy-btn" className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
-              Politique de confidentialité
-            </Link>
-            <Link to={legalHref("/", "cookies")} data-testid="footer-cookies" className="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors">
-              Gestion des cookies
-            </Link>
+            <LegalLinks linkClassName="text-[#F8F6F2]/60 underline hover:text-[#FF914D] transition-colors" />
           </div>
           <p className="mt-6 text-xs leading-relaxed text-[#F8F6F2]/40 max-w-3xl">
             Cette page est une demande d'informations. Elle ne constitue ni une offre de souscription, ni un conseil en investissement. Tout investissement comporte des risques : les caractéristiques, conditions et risques de toute offre sont présentés dans ses documents contractuels.
           </p>
         </div>
       </footer>
-
-      <Dialog open={!!legalDialog} onOpenChange={() => setLegalDialog("")}>
-        <DialogContent className="max-w-lg" data-testid="legal-dialog">
-          <DialogHeader>
-            <DialogTitle className="font-display text-xl">
-              {legalDialog === "mentions" ? "Mentions légales" : "Politique de confidentialité"}
-            </DialogTitle>
-          </DialogHeader>
-          <p className="text-sm leading-relaxed text-gray-600 whitespace-pre-line">
-            {legalDialog === "mentions" ? legal.mentions : legal.privacy}
-          </p>
-        </DialogContent>
-      </Dialog>
 
       {!metaPixel.noticeDismissed && (
         <ConsentBanner onAccept={metaPixel.dismissNotice} />

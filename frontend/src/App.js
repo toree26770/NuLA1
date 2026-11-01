@@ -3,8 +3,6 @@ import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { Toaster } from "@/components/ui/sonner";
 import LandingPage from "@/pages/LandingPage";
 import DefenseLanding from "@/pages/DefenseLanding";
-import LegalPage from "@/pages/legal/LegalPage";
-import { legalHref } from "@/pages/legal/legalContent";
 import LivretLanding from "@/pages/LivretLanding";
 import AdminLogin from "@/pages/admin/Login";
 import AdminLayout from "@/pages/admin/AdminLayout";
@@ -45,9 +43,6 @@ function DefenseRoutes() {
   return (
     <>
       <Route path={DEFENSE_LANDING_PATH} element={<DefenseLanding />} />
-      <Route path={legalHref(DEFENSE_LANDING_PATH, "mentions")} element={<LegalPage kind="mentions" scope="defense" />} />
-      <Route path={legalHref(DEFENSE_LANDING_PATH, "politique")} element={<LegalPage kind="politique" scope="defense" />} />
-      <Route path={legalHref(DEFENSE_LANDING_PATH, "cookies")} element={<LegalPage kind="cookies" scope="defense" />} />
       <Route path={`${DEFENSE_ADMIN_BASE}/login`} element={<AdminLogin />} />
       <Route path={DEFENSE_ADMIN_BASE} element={<AdminLayout />}>
         {AdminChildren()}
@@ -61,9 +56,6 @@ function LivretRoutes() {
   return (
     <>
       <Route path={LIVRET_LANDING_PATH} element={<LivretLanding />} />
-      <Route path={legalHref(LIVRET_LANDING_PATH, "mentions")} element={<LegalPage kind="mentions" scope="livret" />} />
-      <Route path={legalHref(LIVRET_LANDING_PATH, "politique")} element={<LegalPage kind="politique" scope="livret" />} />
-      <Route path={legalHref(LIVRET_LANDING_PATH, "cookies")} element={<LegalPage kind="cookies" scope="livret" />} />
       <Route path={`${LIVRET_ADMIN_BASE}/login`} element={<AdminLogin />} />
       <Route path={LIVRET_ADMIN_BASE} element={<AdminLayout />}>
         {AdminChildren()}
@@ -76,9 +68,6 @@ function ClaudeRoutes() {
   return (
     <>
       <Route path="/" element={<LandingPage />} />
-      <Route path={legalHref("/", "mentions")} element={<LegalPage kind="mentions" scope="claude" />} />
-      <Route path={legalHref("/", "politique")} element={<LegalPage kind="politique" scope="claude" />} />
-      <Route path={legalHref("/", "cookies")} element={<LegalPage kind="cookies" scope="claude" />} />
       <Route path="/admin/login" element={<AdminLogin />} />
       <Route path="/admin" element={<AdminLayout />}>
         {AdminChildren()}

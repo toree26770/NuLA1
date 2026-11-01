@@ -5,9 +5,8 @@ import {
   ChevronDown, Check, ArrowRight, Calculator,
 } from "lucide-react";
 import { API, getSessionId, trackDefense } from "@/api";
-import { applyDefenseBranding, DEFENSE_LANDING_PATH } from "@/defenseBase";
-import { Link } from "react-router-dom";
-import { legalHref } from "@/pages/legal/legalContent";
+import { applyDefenseBranding } from "@/defenseBase";
+import { LegalLinks } from "@/components/LegalLinks";
 import { loadPixels, trackSingle } from "@/metaPixel";
 import { loadGoogleTags, trackGoogleConversion } from "@/googleTag";
 
@@ -805,11 +804,9 @@ export default function DefenseLanding() {
           </div>
           <div>
             <p className="font-semibold text-white">Légal</p>
-            <ul className="mt-3 space-y-2 text-white/55">
-              <li><Link to={legalHref(DEFENSE_LANDING_PATH, "mentions")} className="hover:text-white" data-testid="footer-mentions-legales">Mentions légales</Link></li>
-              <li><Link to={legalHref(DEFENSE_LANDING_PATH, "politique")} className="hover:text-white" data-testid="footer-politique-confidentialite">Politique de confidentialité</Link></li>
-              <li><Link to={legalHref(DEFENSE_LANDING_PATH, "cookies")} className="hover:text-white" data-testid="footer-cookies">Gestion des cookies</Link></li>
-            </ul>
+            <div className="mt-3 flex flex-col items-start gap-2 text-white/55">
+              <LegalLinks linkClassName="hover:text-white text-left" />
+            </div>
           </div>
           <div>
             <p className="font-semibold text-white">Risques & garanties</p>
